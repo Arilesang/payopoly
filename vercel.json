@@ -1,0 +1,11 @@
+{
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "functions": {
+    "server/index.js": {}
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/server/index.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
