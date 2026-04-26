@@ -1,6 +1,6 @@
 // ALL — Mimes
 // Phases: dice → category_reveal → playing → voting → bonus_pick → complete
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
@@ -14,6 +14,7 @@ export default function MimesAll() {
   const players = game?.players ?? {};
   const spectatorIds = Object.keys(players).filter(id => id !== mg?.tPlayerId);
   const tName = players[mg?.tPlayerId]?.name;
+  const [loadingWord, setLoadingWord] = useState(false);
 
   // ── TPlayer: category_reveal → playing once ready ───────────────────
   useEffect(() => {
@@ -45,7 +46,17 @@ export default function MimesAll() {
         {isTPlayer
           ? <DiceRoll onResult={val => {
               const cat = shuffle(getLobbyPool())[0] ?? '?';
-              updateMinigame({ diceValue: val, category: cat, phase: 'category_reveal' });
+              updateMinigame({ diceValue: val, pointsValue: val, category: cat, phase: 'category_reveal' });
+              setLoadingWord(true);
+              fetch('/api/mime-word', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: cat }),
+              })
+                .then(r => r.json())
+                .then(data => updateMinigame({ mimeWord: data.word }))
+                .catch(() => updateMinigame({ mimeWord: '?' }))
+                .finally(() => setLoadingWord(false));
             }} />
           : <p className="muted" style={{ textAlign: 'center' }}>En attente du lancer de dé...</p>}
       </div>
@@ -61,10 +72,14 @@ export default function MimesAll() {
         {isTPlayer ? (
           <>
             <div className="card" style={{ textAlign: 'center' }}>
-              <p className="label">Ta catégorie (secrète)</p>
+              <p className="label">Catégorie</p>
               <p className="mg-category">{mg.category}</p>
+              <p className="label" style={{ marginTop: 12 }}>Mot à mimer</p>
+              {loadingWord || !mg.mimeWord
+                ? <div className="spinner" style={{ margin: '8px auto' }} />
+                : <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.mimeWord}</p>}
             </div>
-            {!myReady && (
+            {!myReady && mg.mimeWord && (
               <button className="btn btn-success btn-large" onClick={setMinigameReady}>Prêt !</button>
             )}
             {myReady && <p className="muted">Préparation...</p>}
@@ -80,7 +95,7 @@ export default function MimesAll() {
   if (mg.phase === 'playing') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Mimes" subtitle={isTPlayer ? mg.category : '🙊 Catégorie cachée'} />
+        <MgHeader title="Mimes" subtitle={isTPlayer ? `${mg.category} — ${mg.mimeWord ?? '...'}` : '🙊 Catégorie cachée'} />
         <Countdown startedAt={mg.countdownStartedAt} />
         {isTPlayer && (
           <button className="btn btn-primary" onClick={() => updateMinigame({ phase: 'voting' })}>

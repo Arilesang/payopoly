@@ -53,7 +53,7 @@ export default function PetitBacDuel() {
           ? <DiceRoll onResult={val => {
               const letters = 'ABCDEFGHIJLMNOPQRSTU'.split('');
               const letter  = letters[Math.floor(Math.random() * letters.length)];
-              updateMinigame({ diceValue: val, letter, phase: 'letter' });
+              updateMinigame({ diceValue: val, pointsValue: val, letter, phase: 'letter' });
             }} />
           : <Waiting text="En attente du lancer de dé..." />}
       </div>

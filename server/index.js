@@ -55,6 +55,30 @@ Return ONLY valid JSON, no extra text:
   }
 });
 
+// ── Mimes: generate a word to mime for a given category ─────────────────────
+app.post('/api/mime-word', async (req, res) => {
+  const { category } = req.body;
+  try {
+    const msg = await ai.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 128,
+      messages: [{
+        role: 'user',
+        content: `Pick one French word or very short phrase that is concrete and fun to act out in a party mime game, related to the category "${category}".
+
+Return ONLY valid JSON, no extra text: { "word": "MOT" }
+
+The word must be uppercase. Favour physical, visual concepts (animals, actions, objects, sports) over abstract ideas.`,
+      }],
+    });
+    const json = JSON.parse(extractJSON(msg.content[0].text));
+    res.json(json);
+  } catch (err) {
+    console.error('Mime word error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Mot Melangés: generate a jumbled word ────────────────────────────────────
 app.post('/api/jumble', async (req, res) => {
   const { category, difficulty } = req.body;

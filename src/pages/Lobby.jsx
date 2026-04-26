@@ -6,7 +6,7 @@ import { useGame } from '../context/GameContext';
 export default function Lobby() {
   const { gameId: urlGameId } = useParams();
   const { t, lang, toggleLang } = useLang();
-  const { game, myPlayerId, isHost, loadGame, setReady, startGame } = useGame();
+  const { game, myPlayerId, isHost, loadGame, setReady, removePlayer, startGame } = useGame();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
@@ -73,9 +73,20 @@ export default function Lobby() {
                 {id === game.hostId ? t('lobby.host') : t('lobby.player')}
               </span>
             </div>
-            <span className={`status-badge ${player.ready ? 'ready' : 'not-ready'}`}>
-              {player.ready ? t('lobby.ready') : t('lobby.notReady')}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className={`status-badge ${player.ready ? 'ready' : 'not-ready'}`}>
+                {player.ready ? t('lobby.ready') : t('lobby.notReady')}
+              </span>
+              {isHost && id !== myPlayerId && (
+                <button
+                  className="btn btn-small btn-ghost"
+                  style={{ color: 'var(--danger, #e74c3c)', padding: '2px 8px', fontSize: '0.75rem' }}
+                  onClick={() => removePlayer(id)}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>

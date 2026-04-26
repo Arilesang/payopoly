@@ -86,7 +86,7 @@ export default function TriviaDuel() {
       <div className="page page-minigame page-center">
         <MgHeader title="Trivia" subtitle={`${tName} ⚔️ ${pName}`} />
         {isTPlayer
-          ? <DiceRoll onResult={val => updateMinigame({ diceValue: val, difficulty: val, phase: 'category_select' })} />
+          ? <DiceRoll onResult={val => updateMinigame({ diceValue: val, pointsValue: val, difficulty: val, phase: 'category_select' })} />
           : <p className="muted" style={{ textAlign: 'center' }}>En attente du lancer de dé...</p>}
       </div>
     );
@@ -149,6 +149,28 @@ export default function TriviaDuel() {
 
     if (!q) return <div className="page page-center"><div className="spinner" /></div>;
 
+    if (isSpectator) {
+      return (
+        <div className="page page-minigame">
+          <MgHeader title="Trivia" subtitle={`${tName} ⚔️ ${pName}`} />
+          {qs.map((question, qi) => (
+            <div key={qi} className="card trivia-question" style={{ marginBottom: 8 }}>
+              <p className="label" style={{ marginBottom: 4 }}>Q{qi + 1}</p>
+              <p className="trivia-q-text">{question.q}</p>
+              <div className="trivia-options" style={{ pointerEvents: 'none', opacity: 0.7 }}>
+                {question.options.map((opt, i) => (
+                  <div key={i} className="btn btn-category" style={{ cursor: 'default' }}>
+                    <span className="opt-letter">{['A', 'B', 'C', 'D'][i]}</span> {opt}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <p className="muted" style={{ textAlign: 'center' }}>En attente des réponses...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="page page-minigame">
         <MgHeader title="Trivia" subtitle={`Q${currentQ + 1}/${qs.length}`} />
@@ -168,7 +190,7 @@ export default function TriviaDuel() {
             ))}
           </div>
         )}
-        {(allDone || isSpectator) && (
+        {allDone && (
           <p className="muted" style={{ textAlign: 'center' }}>En attente des réponses...</p>
         )}
       </div>

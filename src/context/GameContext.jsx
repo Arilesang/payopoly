@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { ref, set, get, onValue, update, push } from 'firebase/database';
+import { ref, set, get, onValue, update, push, remove } from 'firebase/database';
 import { db } from '../firebase';
 
 const GameContext = createContext();
@@ -93,6 +93,10 @@ export function GameProvider({ children }) {
     await update(ref(db, `games/${gameId}/players/${myPlayerId}`), { ready });
   }
 
+  async function removePlayer(playerId) {
+    await remove(ref(db, `games/${gameId}/players/${playerId}`));
+  }
+
   async function startGame() {
     const playerIds = Object.keys(game.players);
     const shuffledDefaults = shuffle(DEFAULT_CATEGORIES);
@@ -175,6 +179,7 @@ export function GameProvider({ children }) {
       originalWord: null,
       triviaAnswers: {},
       votes:       {},
+      mimeWord:    null,
       pointsValue: null,
       winnerId:    null,
       bonusWinnerId: null,
@@ -245,7 +250,7 @@ export function GameProvider({ children }) {
       MINIGAMES, PETIT_BAC_LETTERS,
       getLobbyPool,
       createGame, joinGame, loadGame,
-      setReady, startGame,
+      setReady, removePlayer, startGame,
       submitCategory, finishCategorySubmission,
       selectMinigameType, selectMinigame, selectOpponent,
       initMinigame, updateMinigame, setMinigameReady,

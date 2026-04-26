@@ -47,7 +47,7 @@ export default function PetitBacSolo() {
           ? <DiceRoll onResult={val => {
               const letters = 'ABCDEFGHIJLMNOPQRSTU'.split('');
               const letter  = letters[Math.floor(Math.random() * letters.length)];
-              updateMinigame({ diceValue: val, letter, phase: 'letter' });
+              updateMinigame({ diceValue: val, pointsValue: val, letter, phase: 'letter' });
             }} />
           : <p className="muted" style={{ textAlign: 'center' }}>En attente du lancer de dé...</p>}
       </div>

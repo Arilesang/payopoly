@@ -187,14 +187,6 @@ function TurnPanel({ turn, myPlayer, players, myPlayerId, t, onSelectType, onSpi
         <p className="turn-label">{t('game.yourTurn')}</p>
         <p className="turn-prompt">{t('game.spinPrompt')}</p>
         <SpinWheel items={games} onResult={onSpinResult} t={t} />
-        <div style={{ marginTop: '1rem', borderTop: '1px dashed #444', paddingTop: '0.75rem' }}>
-          <p style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>DEV — pick directly:</p>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {games.map(g => (
-              <button key={g} className="btn btn-small btn-ghost" onClick={() => onSpinResult(g)}>{g}</button>
-            ))}
-          </div>
-        </div>
       </div>
     );
   }

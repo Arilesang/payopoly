@@ -61,6 +61,18 @@ export default function SpinWheel({ items, onResult, t }) {
     ctx.arc(cx, cy, 16, 0, 2 * Math.PI);
     ctx.fillStyle = '#fff';
     ctx.fill();
+
+    // Pointer triangle at top center (drawn on-canvas for exact alignment)
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, 0);
+    ctx.lineTo(cx + 12, 0);
+    ctx.lineTo(cx, 18);
+    ctx.closePath();
+    ctx.fillStyle = '#e67e22';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fill();
+    ctx.shadowBlur = 0;
   }
 
   function spin() {
@@ -108,7 +120,6 @@ export default function SpinWheel({ items, onResult, t }) {
   return (
     <div className="spin-wheel-container">
       <div className="wheel-wrapper">
-        <div className="wheel-pointer">▼</div>
         <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" />
       </div>
       {result && <p className="wheel-result">{result}</p>}

@@ -69,7 +69,7 @@ export default function MotMelanges() {
         {isTPlayer
           ? <DiceRoll onResult={val => {
               const cat = shuffle(getLobbyPool())[0] ?? '?';
-              updateMinigame({ diceValue: val, difficulty: val, category: cat, phase: 'category_display' });
+              updateMinigame({ diceValue: val, pointsValue: val, difficulty: val, category: cat, phase: 'category_display' });
             }} />
           : <p className="muted" style={{ textAlign: 'center' }}>En attente du lancer de dé...</p>}
       </div>
