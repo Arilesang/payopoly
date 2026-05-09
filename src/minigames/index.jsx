@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import PetitBacDuel   from './PetitBacDuel';
 import TriviaDuel     from './TriviaDuel';
+import TriviaAll      from './TriviaAll';
 import MimesAll       from './MimesAll';
 import PetitBacSolo   from './PetitBacSolo';
 import MotMelanges    from './MotMelanges';
@@ -11,6 +12,7 @@ const COMPONENTS = {
   'duel:Petit Bac':   PetitBacDuel,
   'duel:Trivia':      TriviaDuel,
   'all:Mimes':        MimesAll,
+  'all:Trivia':       TriviaAll,
   'solo:Petit Bac':   PetitBacSolo,
   'solo:Mot Melangés': MotMelanges,
 };

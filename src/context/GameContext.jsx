@@ -13,7 +13,7 @@ const DEFAULT_CATEGORIES = [
 // P2: only show implemented minigames on the spin wheel
 export const MINIGAMES = {
   duel: ['Petit Bac', 'Trivia'],
-  all:  ['Mimes'],
+  all:  ['Mimes', 'Trivia'],
   solo: ['Petit Bac', 'Mot Melangés'],
 };
 
