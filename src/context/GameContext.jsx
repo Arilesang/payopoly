@@ -94,7 +94,26 @@ export function GameProvider({ children }) {
   }
 
   async function removePlayer(playerId) {
-    await remove(ref(db, `games/${gameId}/players/${playerId}`));
+    const hostName = game.players[game.hostId]?.name ?? 'Host';
+    const updates = {
+      [`kicked/${playerId}`]: hostName,
+      [`players/${playerId}`]: null,
+    };
+    if (game.playerOrder) {
+      updates.playerOrder = game.playerOrder.filter(id => id !== playerId);
+    }
+    await update(ref(db, `games/${gameId}`), updates);
+  }
+
+  async function toggleDevMode() {
+    await update(ref(db, `games/${gameId}`), { devMode: !game.devMode });
+  }
+
+  async function adjustPoints(playerId, delta) {
+    const current = game.players[playerId]?.points ?? 0;
+    await update(ref(db, `games/${gameId}/players/${playerId}`), {
+      points: Math.max(0, current + delta),
+    });
   }
 
   async function startGame() {
@@ -259,6 +278,7 @@ export function GameProvider({ children }) {
   const isTPlayer   = mg?.tPlayerId === myPlayerId;
   const isPPlayer   = mg?.pPlayerId === myPlayerId;
   const isSpectator = mg ? (!isTPlayer && !isPPlayer) : false;
+  const kickedBy    = game?.kicked?.[myPlayerId] ?? null;
 
   function getLobbyPool() { return getLobbyCategories(game?.players); }
 
@@ -266,11 +286,13 @@ export function GameProvider({ children }) {
     <GameContext.Provider value={{
       game, gameId, myPlayerId, myPlayer, isHost, isMyTurn,
       isTPlayer, isPPlayer, isSpectator,
+      kickedBy,
       error,
       MINIGAMES, PETIT_BAC_LETTERS,
       getLobbyPool,
       createGame, joinGame, loadGame,
       setReady, removePlayer, startGame,
+      toggleDevMode, adjustPoints,
       submitCategory, finishCategorySubmission,
       selectMinigameType, selectMinigame, selectOpponent,
       initMinigame, updateMinigame, setMinigameReady,

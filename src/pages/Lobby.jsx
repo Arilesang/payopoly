@@ -6,9 +6,18 @@ import { useGame } from '../context/GameContext';
 export default function Lobby() {
   const { gameId: urlGameId } = useParams();
   const { t, lang, toggleLang } = useLang();
-  const { game, myPlayerId, isHost, loadGame, setReady, removePlayer, startGame } = useGame();
+  const { game, myPlayerId, isHost, kickedBy, loadGame, setReady, removePlayer, startGame } = useGame();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!kickedBy) return;
+    const timer = setTimeout(() => {
+      localStorage.removeItem(`payopoly_${urlGameId}`);
+      navigate('/');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [kickedBy]);
 
   // Load the game if arriving directly via URL
   useEffect(() => {
@@ -40,6 +49,18 @@ export default function Lobby() {
   const players = Object.entries(game?.players ?? {});
   const allReady = players.length > 1 && players.every(([, p]) => p.ready);
   const myPlayer = game?.players?.[myPlayerId];
+
+  if (kickedBy) {
+    return (
+      <div className="page page-center">
+        <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>{t('game.kicked')}</h2>
+          <p>{t('game.kickedBy')}: <strong>{kickedBy}</strong></p>
+          <p className="muted">{t('game.kickedRedirect')}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!game) {
     return <div className="page page-center"><div className="spinner" /></div>;
