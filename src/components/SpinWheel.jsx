@@ -6,7 +6,7 @@ const COLORS = [
   '#2980b9', '#27ae60', '#d35400', '#8e44ad',
 ];
 
-export default function SpinWheel({ items, onResult, t }) {
+export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false }) {
   const canvasRef = useRef(null);
   const angleRef = useRef(0);
   const [spinning, setSpinning] = useState(false);
@@ -76,10 +76,11 @@ export default function SpinWheel({ items, onResult, t }) {
   }
 
   function spin() {
-    if (spinning || done) return;
+    if (spinning || done || disabled) return;
     setSpinning(true);
 
-    const winIndex = Math.floor(Math.random() * items.length);
+    const forcedIndex = forcedResult !== null ? items.indexOf(forcedResult) : -1;
+    const winIndex = forcedIndex >= 0 ? forcedIndex : Math.floor(Math.random() * items.length);
     const slice = (2 * Math.PI) / items.length;
 
     // Pointer is at top (-PI/2). Calculate rotation so winIndex lands there.
@@ -126,7 +127,7 @@ export default function SpinWheel({ items, onResult, t }) {
       <button
         className="btn btn-accent"
         onClick={spin}
-        disabled={spinning || done}
+        disabled={spinning || done || disabled}
       >
         {spinning ? t('game.spinning') : t('game.spin')}
       </button>

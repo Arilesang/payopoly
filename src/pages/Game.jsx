@@ -12,9 +12,10 @@ export default function Game() {
   const { gameId: urlGameId } = useParams();
   const { t, lang, toggleLang } = useLang();
   const {
-    game, myPlayerId, myPlayer, isMyTurn, loadGame,
+    game, myPlayerId, myPlayer, isHost, isMyTurn, kickedBy, loadGame,
     submitCategory, finishCategorySubmission,
     selectMinigameType, selectMinigame, selectOpponent,
+    toggleDevMode,
   } = useGame();
   const navigate = useNavigate();
 
@@ -23,6 +24,16 @@ export default function Game() {
   const [submittedCount, setSubmittedCount] = useState(0);
 
   useEffect(() => { loadGame(urlGameId); }, [urlGameId]);
+
+  // Redirect kicked player home after 3 seconds
+  useEffect(() => {
+    if (!kickedBy) return;
+    const timer = setTimeout(() => {
+      localStorage.removeItem(`payopoly_${urlGameId}`);
+      navigate('/');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [kickedBy]);
 
   // Navigate to minigame when phase is 'playing'
   useEffect(() => {
@@ -40,6 +51,18 @@ export default function Game() {
     if (next >= CATEGORIES_TO_ENTER) {
       await finishCategorySubmission();
     }
+  }
+
+  if (kickedBy) {
+    return (
+      <div className="page page-center">
+        <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>{t('game.kicked')}</h2>
+          <p>{t('game.kickedBy')}: <strong>{kickedBy}</strong></p>
+          <p className="muted">{t('game.kickedRedirect')}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!game) return <div className="page page-center"><div className="spinner" /></div>;
@@ -111,6 +134,7 @@ export default function Game() {
     const turn = game.currentTurn;
     const players = game.players ?? {};
     const currentPlayer = players[turn?.playerId];
+    const devMode = game.devMode ?? false;
 
     return (
       <div className="page page-game">
@@ -120,6 +144,15 @@ export default function Game() {
             <button className="btn btn-small btn-ghost" onClick={() => setShowCategories(true)}>
               {t('game.myCategories')}
             </button>
+            {isHost && (
+              <button
+                className={`btn btn-small ${devMode ? 'btn-accent' : 'btn-ghost'}`}
+                onClick={toggleDevMode}
+                title={t('game.devMode')}
+              >
+                {devMode ? t('game.devModeOn') : t('game.devModeOff')}
+              </button>
+            )}
             <button className="btn btn-small btn-ghost" onClick={toggleLang}>
               {lang === 'fr' ? 'EN' : 'FR'}
             </button>
@@ -164,7 +197,12 @@ export default function Game() {
 
 // ── Sub-component: current player's turn panel ──────────────────
 function TurnPanel({ turn, myPlayer, players, myPlayerId, t, onSelectType, onSpinResult, onSelectOpponent }) {
-  const { MINIGAMES } = useGame();
+  const { MINIGAMES, game } = useGame();
+  const [devPick, setDevPick] = useState(null);
+  const devMode = game?.devMode ?? false;
+
+  // Reset pick when phase changes (e.g. new turn)
+  useEffect(() => { setDevPick(null); }, [turn?.phase]);
 
   if (turn?.phase === 'choose_type') {
     return (
@@ -186,7 +224,29 @@ function TurnPanel({ turn, myPlayer, players, myPlayerId, t, onSelectType, onSpi
       <div className="card turn-card">
         <p className="turn-label">{t('game.yourTurn')}</p>
         <p className="turn-prompt">{t('game.spinPrompt')}</p>
-        <SpinWheel items={games} onResult={onSpinResult} t={t} />
+        {devMode && (
+          <div style={{ marginBottom: '0.75rem' }}>
+            <p className="label" style={{ marginBottom: '0.4rem' }}>⚙️ {t('game.devPickMinigame')}</p>
+            <div className="type-btns">
+              {games.map(g => (
+                <button
+                  key={g}
+                  className={`btn btn-small ${devPick === g ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setDevPick(prev => prev === g ? null : g)}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <SpinWheel
+          items={games}
+          onResult={onSpinResult}
+          t={t}
+          forcedResult={devMode ? devPick : null}
+          disabled={devMode && !devPick}
+        />
       </div>
     );
   }
