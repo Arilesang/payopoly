@@ -7,13 +7,15 @@ import TriviaAll      from './TriviaAll';
 import MimesAll       from './MimesAll';
 import PetitBacSolo   from './PetitBacSolo';
 import MotMelanges    from './MotMelanges';
+import PictionaryAll  from './PictionaryAll';
 
 const COMPONENTS = {
-  'duel:Petit Bac':   PetitBacDuel,
-  'duel:Trivia':      TriviaDuel,
-  'all:Mimes':        MimesAll,
-  'all:Trivia':       TriviaAll,
-  'solo:Petit Bac':   PetitBacSolo,
+  'duel:Petit Bac':    PetitBacDuel,
+  'duel:Trivia':       TriviaDuel,
+  'all:Mimes':         MimesAll,
+  'all:Trivia':        TriviaAll,
+  'all:Pictionary':    PictionaryAll,
+  'solo:Petit Bac':    PetitBacSolo,
   'solo:Mot Melangés': MotMelanges,
 };
 

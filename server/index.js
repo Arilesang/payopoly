@@ -79,6 +79,30 @@ The word must be uppercase. Favour physical, visual concepts (animals, actions, 
   }
 });
 
+// ── Pictionary: generate a word to draw for a given category + difficulty ────
+app.post('/api/pictionary-word', async (req, res) => {
+  const { category, difficulty } = req.body;
+  try {
+    const msg = await ai.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 128,
+      messages: [{
+        role: 'user',
+        content: `Pick one French word or very short phrase (2 words max) that is fun and possible to draw in a party Pictionary game, related to the category "${category}" at difficulty level ${difficulty}/6 (1=very simple common object, 6=abstract or complex concept).
+
+Return ONLY valid JSON, no extra text: { "word": "MOT" }
+
+The word must be uppercase. Favour concrete, drawable things: objects, animals, actions, places, characters. Avoid very abstract words at low difficulty.`,
+      }],
+    });
+    const json = JSON.parse(extractJSON(msg.content[0].text));
+    res.json(json);
+  } catch (err) {
+    console.error('Pictionary word error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Mot Melangés: generate a jumbled word ────────────────────────────────────
 app.post('/api/jumble', async (req, res) => {
   const { category, difficulty } = req.body;

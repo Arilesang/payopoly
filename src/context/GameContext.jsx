@@ -13,7 +13,7 @@ const DEFAULT_CATEGORIES = [
 // P2: only show implemented minigames on the spin wheel
 export const MINIGAMES = {
   duel: ['Petit Bac', 'Trivia'],
-  all:  ['Mimes', 'Trivia'],
+  all:  ['Mimes', 'Trivia', 'Pictionary'],
   solo: ['Petit Bac', 'Mot Melangés'],
 };
 
@@ -180,6 +180,10 @@ export function GameProvider({ children }) {
       triviaAnswers: {},
       votes:       {},
       mimeWord:    null,
+      pictionaryWord: null,
+      strokes:     {},
+      currentStroke: null,
+      wordRevealed: false,
       pointsValue: null,
       winnerId:    null,
       bonusWinnerId: null,
@@ -208,6 +212,22 @@ export function GameProvider({ children }) {
   // Cast a vote — spectators only; choice is 'yes'/'no' or a playerId
   async function castVote(choice) {
     await update(ref(db, `games/${gameId}/currentMinigame/votes`), { [myPlayerId]: choice });
+  }
+
+  // Push a completed drawing stroke to Firebase (Pictionary)
+  async function pushDrawingStroke(stroke) {
+    await push(ref(db, `games/${gameId}/currentMinigame/strokes`), stroke);
+  }
+
+  // Update the in-progress stroke (throttled by caller); pass null to clear
+  async function updateCurrentStroke(stroke) {
+    await update(ref(db, `games/${gameId}/currentMinigame`), { currentStroke: stroke ?? null });
+  }
+
+  // Clear all strokes and the in-progress stroke
+  async function clearDrawing() {
+    await set(ref(db, `games/${gameId}/currentMinigame/strokes`), {});
+    await update(ref(db, `games/${gameId}/currentMinigame`), { currentStroke: null });
   }
 
   // Award points and advance to the next turn
@@ -255,6 +275,7 @@ export function GameProvider({ children }) {
       selectMinigameType, selectMinigame, selectOpponent,
       initMinigame, updateMinigame, setMinigameReady,
       submitTriviaAnswer, castVote, completeMinigame,
+      pushDrawingStroke, updateCurrentStroke, clearDrawing,
     }}>
       {children}
     </GameContext.Provider>

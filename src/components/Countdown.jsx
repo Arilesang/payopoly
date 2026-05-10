@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
 
-const TOTAL = 30;
-
-export default function Countdown({ startedAt, onExpire }) {
-  const [remaining, setRemaining] = useState(TOTAL);
+export default function Countdown({ startedAt, onExpire, total = 30 }) {
+  const [remaining, setRemaining] = useState(total);
   const [expired, setExpired]     = useState(false);
 
   useEffect(() => {
     if (!startedAt) return;
     function tick() {
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      const left    = Math.max(0, TOTAL - elapsed);
+      const left    = Math.max(0, total - elapsed);
       setRemaining(left);
       if (left === 0 && !expired) {
         setExpired(true);
@@ -23,9 +21,9 @@ export default function Countdown({ startedAt, onExpire }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startedAt]);
 
-  const pct     = (remaining / TOTAL) * 100;
+  const pct     = (remaining / total) * 100;
   const urgent  = remaining <= 10;
-  const color   = remaining > 15 ? '#27ae60' : remaining > 7 ? '#f39c12' : '#e74c3c';
+  const color   = remaining > (total * 0.5) ? '#27ae60' : remaining > (total * 0.25) ? '#f39c12' : '#e74c3c';
 
   return (
     <div className="countdown-wrap">
