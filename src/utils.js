@@ -71,6 +71,20 @@ export function isMatch(guess, answer) {
   return a.length > 6 && levenshtein(g, a) <= 1;
 }
 
+// Does this word match anything in a list? Deliberately more forgiving than
+// isMatch, with no length gate: the Rimes Rapides pool is model-generated and
+// comes back misspelled often enough ("CIGNE" for CYGNE) that a correctly
+// spelled word would otherwise be rejected and cost someone the round. A
+// near-miss of a rhyme almost certainly rhymes too, so the loose side is safe.
+export function matchesAny(word, pool, maxDistance = 1) {
+  const w = normalize(word);
+  if (!w) return false;
+  return (pool ?? []).some(entry => {
+    const e = normalize(entry);
+    return !!e && (e === w || levenshtein(w, e) <= maxDistance);
+  });
+}
+
 // Votes are settled once everyone has voted, the deadline has passed with at
 // least one vote in, or no outstanding vote could change the leader.
 export function votesSettled(votes, voterIds, deadline) {

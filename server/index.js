@@ -23,8 +23,29 @@ app.use(express.json());
 const ai = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = 'claude-haiku-4-5';
 
+// Pull the JSON value out of a model reply. Stripping code fences is not
+// enough on its own: the model sometimes adds a sentence before or after the
+// object, which made JSON.parse throw and took the whole round down. Slicing
+// from the first brace to its matching close survives both.
 function extractJSON(text) {
-  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+  const start = stripped.search(/[[{]/);
+  if (start === -1) return stripped;
+  const open  = stripped[start];
+  const close = open === '{' ? '}' : ']';
+
+  let depth = 0, inString = false, escaped = false;
+  for (let i = start; i < stripped.length; i++) {
+    const ch = stripped[i];
+    if (escaped)            { escaped = false; continue; }
+    if (ch === '\\')        { escaped = true;  continue; }
+    if (ch === '"')         { inString = !inString; continue; }
+    if (inString)           continue;
+    if (ch === open)        depth++;
+    else if (ch === close)  { depth--; if (depth === 0) return stripped.slice(start, i + 1); }
+  }
+  return stripped.slice(start);
 }
 
 // One Claude call returning parsed JSON. Every endpoint below is a prompt plus
@@ -149,7 +170,9 @@ app.post('/api/rhymes', endpoint('Rhymes', ({ category, difficulty }) =>
 Return ONLY valid JSON, no extra text:
 { "seed": "CHATEAU", "valid": ["BATEAU", "GATEAU", "CADEAU", "MANTEAU", "RIDEAU"] }
 
-Rules: all uppercase. Give at least 15 rhymes and as many as you can up to 40 — players take turns naming them and the round ends when someone runs dry, so a short list makes for a short game. Rhyme on the final spoken sound. Do not include the seed word in the list.`,
+Rules: all uppercase. Give at least 15 rhymes and as many as you can up to 40 — players take turns naming them and the round ends when someone runs dry, so a short list makes for a short game. Rhyme on the final spoken sound. Do not include the seed word in the list.
+
+Spelling must be correct standard French, accents included. The list is used to check players' answers, so a misspelled entry rejects a word someone got right. Include a word only if you are sure of its spelling.`,
   1024));
 
 // Local dev only — Vercel uses the exported app as a serverless function

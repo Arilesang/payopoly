@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import MgHeader, { Waiting } from '../components/MgHeader';
-import { shuffle, normalize } from '../utils';
+import { shuffle, normalize, matchesAny } from '../utils';
 
 const START_MS = 7000;
 const STEP_MS  = 500;
@@ -98,11 +98,12 @@ export default function RimesRapides() {
     setDraft('');
 
     const key  = normalize(word);
-    const pool = (mg.rhymePool ?? []).map(normalize);
     const used = chain.map(c => normalize(c.word));
 
+    // Repeats must match exactly — two real rhymes can sit one edit apart
+    // (GAGNE / BAGNE), so a fuzzy repeat check would reject a valid word.
     if (used.includes(key)) return fail('déjà dit');
-    if (!pool.includes(key)) return fail('ne rime pas');
+    if (!matchesAny(word, mg.rhymePool)) return fail('ne rime pas');
 
     updateMinigame({
       [`chain/${now}_${myPlayerId}`]: { playerId: myPlayerId, word: word.toUpperCase(), at: now },
