@@ -127,20 +127,24 @@ All uppercase. The word must be a single common noun, guessable by describing it
 app.post('/api/punchline', endpoint('Punchline', ({ category }) =>
   `Write one funny fill-in-the-blank prompt in French for a party game, themed around the category "${category}". Players compete to write the funniest completion.
 
+CONTENT RULE — this comes first. The game is played out loud with family and friends of mixed ages, including children and grandparents, and the prompt appears on everyone's phone at once. It must be clean: no sex or innuendo, no drugs, no violence, no insults aimed at real people. "Adult" versions of films, or anything you would not read aloud at a family dinner, are not acceptable. Funny like a cartoon, not funny like a late-night show.
+
 Return ONLY valid JSON, no extra text:
 { "prompt": "Le pire titre possible pour une suite de Titanic, c'est ___" }
 
-Rules: exactly one blank, written as three underscores. Keep it under 100 characters. Make it playful and open-ended so wildly different answers are all funny. Nothing sexual, nothing cruel about real people.`,
+Rules: exactly one blank, written as three underscores. Keep it under 100 characters. Make it playful and open-ended so wildly different answers are all funny.`,
   256));
 
 // ── Qui a écrit ça: a short personal prompt ─────────────────────────────────
 app.post('/api/prompt', endpoint('Prompt', ({ category }) =>
   `Write one short personal question in French for a party game, themed around the category "${category}". Everyone in the room answers it, then players try to guess who wrote which answer — so it should invite answers that reveal something about the person.
 
+CONTENT RULE — this comes first. The game is played out loud with family and friends of mixed ages, including children and grandparents. No sex or innuendo, no drugs, no violence. Nothing that puts someone on the spot about their relationships, body, money, or health — everyone in the room will read the answer.
+
 Return ONLY valid JSON, no extra text:
 { "prompt": "Décris ta pire tenue d'adolescent en trois mots." }
 
-Keep it under 90 characters, warm and funny rather than probing. Nothing that could embarrass someone in front of friends.`,
+Keep it under 90 characters, warm and funny rather than probing.`,
   256));
 
 // ── Bluff: a true statement with the answer removed ─────────────────────────
