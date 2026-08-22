@@ -622,3 +622,198 @@ p  { font-size: 15px; line-height: 1.5; }
   text-align: center;
   padding: 16px 0;
 }
+
+/* ══ New minigames ═══════════════════════════════════════════ */
+
+/* Shared: one player + detail + points, used on every results card */
+.mg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 15px;
+  border-bottom: 1px solid var(--border);
+}
+.mg-row:last-child { border-bottom: none; }
+.mg-row > span:first-child { flex: 1; font-weight: 600; }
+.mg-row strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+.prompt-text {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.45;
+  padding: 6px 0;
+}
+.survey-prompt {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 6px 0;
+}
+
+/* ── Sondage Éclair — reveal chart ────────────────────────── */
+.bar-chart { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.bar-row   { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.bar-name  { width: 78px; flex-shrink: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 18px; background: var(--bg-dark); border-radius: 9px; overflow: hidden; }
+.bar-fill  {
+  display: block; height: 100%; border-radius: 9px;
+  background: var(--blue); transition: width 0.5s ease-out;
+}
+.bar-fill.bar-top { background: var(--accent); }
+.bar-count { width: 20px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ── Mot Interdit — forbidden words + guess feed ──────────── */
+.taboo-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.taboo-chip {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(192, 57, 43, 0.18);
+  border: 1px solid var(--danger);
+  color: #ff9c8f;
+}
+.taboo-chip-live { font-size: 11px; padding: 4px 9px; }
+
+.guess-feed {
+  flex: 1;
+  min-height: 140px;
+  max-height: 46vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.guess-line { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.guess-author {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  flex-shrink: 0; min-width: 62px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.guess-text { word-break: break-word; }
+
+.guess-input-row { display: flex; gap: 8px; align-items: stretch; }
+.guess-input-row .input { flex: 1; }
+.guess-input-row .btn { width: auto; flex-shrink: 0; padding-inline: 18px; }
+
+/* ── Punchline — two answers head to head ─────────────────── */
+.punchline-options { display: flex; flex-direction: column; gap: 10px; }
+.btn-punchline {
+  display: flex; align-items: center; gap: 10px;
+  text-align: left; white-space: normal;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  padding: 16px 14px;
+  min-height: 64px;
+  line-height: 1.4;
+}
+.punchline-text { flex: 1; font-size: 16px; font-weight: 600; }
+.punchline-count {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  background: var(--bg-dark); border-radius: 999px; padding: 3px 9px;
+}
+
+/* ── Bluff / Qui a écrit ça — answer breakdown ────────────── */
+.bluff-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.bluff-row:last-child { border-bottom: none; }
+.bluff-row-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 3px;
+}
+.bluff-row-head strong { font-size: 15px; word-break: break-word; }
+.bluff-badge {
+  flex-shrink: 0; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.05em; color: var(--text-muted);
+}
+.bluff-badge.bluff-true { color: var(--bg-dark); background: var(--accent); padding: 2px 8px; border-radius: 999px; }
+
+/* ── Qui a écrit ça — attribution grid ────────────────────── */
+.attrib-card { padding: 12px 14px; }
+.attrib-text { font-size: 16px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+.attrib-names { display: flex; flex-wrap: wrap; gap: 6px; }
+.attrib-chip {
+  width: auto; padding: 6px 12px; font-size: 13px;
+  background: var(--bg-card2); border: 1px solid var(--border);
+}
+
+/* ── Le Curseur — the spectrum dial ───────────────────────── */
+.spectrum { padding: 6px 2px 4px; }
+.spectrum-poles { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.spectrum-pole {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted); max-width: 45%;
+}
+.spectrum-pole-right { text-align: right; }
+
+.spectrum-track-wrap { position: relative; padding: 26px 0 8px; }
+.spectrum-track {
+  position: relative; height: 14px; border-radius: 7px;
+  background: linear-gradient(90deg, var(--blue), var(--bg-card2), var(--danger));
+  border: 1px solid var(--border);
+}
+.spectrum-band {
+  position: absolute; top: -3px; bottom: -3px;
+  background: rgba(240, 192, 64, 0.55); border-radius: 4px;
+}
+.spectrum-band-wide { background: rgba(240, 192, 64, 0.18); }
+.spectrum-target {
+  position: absolute; top: -9px; bottom: -9px; width: 3px;
+  background: var(--accent); border-radius: 2px; transform: translateX(-1px);
+}
+.spectrum-pin { position: absolute; top: -22px; transform: translateX(-50%); text-align: center; }
+.spectrum-pin-dot {
+  display: block; width: 10px; height: 10px; margin: 0 auto;
+  border-radius: 50%; background: var(--text); border: 2px solid var(--bg-dark);
+}
+.spectrum-pin-name {
+  display: block; font-size: 10px; font-weight: 700; color: var(--text-muted);
+  white-space: nowrap; margin-top: 1px;
+}
+.spectrum-input {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  width: 100%; margin: 0; background: transparent;
+  -webkit-appearance: none; appearance: none;
+  height: 34px; cursor: grab;
+}
+.spectrum-input:disabled { cursor: default; opacity: 0.5; }
+.spectrum-input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); border: 3px solid var(--bg-dark);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: grab;
+}
+.spectrum-input::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); border: 3px solid var(--bg-dark);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: grab; border-color: var(--bg-dark);
+}
+.spectrum-input::-moz-range-track { background: transparent; }
+.spectrum-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* ── Rimes Rapides — shot clock ───────────────────────────── */
+.shot-clock { display: flex; align-items: center; gap: 10px; }
+.shot-clock-bar {
+  flex: 1; height: 12px; border-radius: 6px;
+  background: var(--bg-dark); border: 1px solid var(--border); overflow: hidden;
+}
+.shot-clock-fill {
+  display: block; height: 100%; background: var(--success);
+  transition: width 0.1s linear;
+}
+.shot-clock-fill.urgent { background: var(--danger); }
+.shot-clock-num {
+  font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums;
+  min-width: 52px; text-align: right;
+}
+.shot-clock-num.urgent { color: var(--danger); }
+
+.rime-turn { text-align: center; font-size: 17px; font-weight: 700; }
+.rime-flash { text-align: center; color: var(--danger); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill, .shot-clock-fill { transition: none; }
+}

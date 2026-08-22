@@ -8,15 +8,31 @@ import MimesAll       from './MimesAll';
 import PetitBacSolo   from './PetitBacSolo';
 import MotMelanges    from './MotMelanges';
 import PictionaryAll  from './PictionaryAll';
+import SondageEclair  from './SondageEclair';
+import MotInterdit    from './MotInterdit';
+import Punchline      from './Punchline';
+import Bluff          from './Bluff';
+import Curseur        from './Curseur';
+import QuiAEcrit      from './QuiAEcrit';
+import RimesRapides   from './RimesRapides';
+import CroquisCroises from './CroquisCroises';
 
 const COMPONENTS = {
-  'duel:Petit Bac':    PetitBacDuel,
-  'duel:Trivia':       TriviaDuel,
-  'all:Mimes':         MimesAll,
-  'all:Trivia':        TriviaAll,
-  'all:Pictionary':    PictionaryAll,
-  'solo:Petit Bac':    PetitBacSolo,
-  'solo:Mot Melangés': MotMelanges,
+  'duel:Petit Bac':      PetitBacDuel,
+  'duel:Trivia':         TriviaDuel,
+  'duel:Punchline':      Punchline,
+  'duel:Rimes Rapides':  RimesRapides,
+  'all:Mimes':           MimesAll,
+  'all:Trivia':          TriviaAll,
+  'all:Pictionary':      PictionaryAll,
+  'all:Sondage Éclair':  SondageEclair,
+  'all:Mot Interdit':    MotInterdit,
+  'all:Bluff':           Bluff,
+  'all:Le Curseur':      Curseur,
+  'all:Qui a écrit ça':  QuiAEcrit,
+  'all:Croquis Croisés': CroquisCroises,
+  'solo:Petit Bac':      PetitBacSolo,
+  'solo:Mot Melangés':   MotMelanges,
 };
 
 export default function MinigameRouter() {

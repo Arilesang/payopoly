@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PETIT_BAC_LETTERS } from '../context/GameContext';
+import { PETIT_BAC_LETTERS } from '../gameConfig';
 
 export default function SlotMachineLetter({ targetLetter, onDone }) {
   const [display, setDisplay] = useState('?');
