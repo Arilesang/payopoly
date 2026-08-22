@@ -197,7 +197,7 @@ export default function Game() {
 
 // ── Sub-component: current player's turn panel ──────────────────
 function TurnPanel({ turn, myPlayer, players, myPlayerId, t, onSelectType, onSpinResult, onSelectOpponent }) {
-  const { MINIGAMES, game } = useGame();
+  const { availableMinigames, game } = useGame();
   const [devPick, setDevPick] = useState(null);
   const devMode = game?.devMode ?? false;
 
@@ -219,7 +219,10 @@ function TurnPanel({ turn, myPlayer, players, myPlayerId, t, onSelectType, onSpi
   }
 
   if (turn?.phase === 'spinning') {
-    const games = MINIGAMES[turn.minigameType] ?? [];
+    // Weighted for lobby size, so melee slices appear more than once at a big
+    // table — the dev picker wants each name listed once regardless.
+    const games    = availableMinigames(turn.minigameType, Object.keys(players).length);
+    const devGames = [...new Set(games)];
     return (
       <div className="card turn-card">
         <p className="turn-label">{t('game.yourTurn')}</p>
@@ -228,7 +231,7 @@ function TurnPanel({ turn, myPlayer, players, myPlayerId, t, onSelectType, onSpi
           <div style={{ marginBottom: '0.75rem' }}>
             <p className="label" style={{ marginBottom: '0.4rem' }}>⚙️ {t('game.devPickMinigame')}</p>
             <div className="type-btns">
-              {games.map(g => (
+              {devGames.map(g => (
                 <button
                   key={g}
                   className={`btn btn-small ${devPick === g ? 'btn-primary' : 'btn-ghost'}`}

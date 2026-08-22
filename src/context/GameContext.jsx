@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { ref, set, get, onValue, update, push, remove } from 'firebase/database';
+import { ref, set, get, onValue, update, push } from 'firebase/database';
 import { db } from '../firebase';
+import { shuffle } from '../utils';
+import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, availableMinigames } from '../gameConfig';
 
 const GameContext = createContext();
 
@@ -10,21 +12,10 @@ const DEFAULT_CATEGORIES = [
   'Vêtements', 'Transports', 'Instruments', 'Fleurs', 'Personnages historiques',
 ];
 
-// P2: only show implemented minigames on the spin wheel
-export const MINIGAMES = {
-  duel: ['Petit Bac', 'Trivia'],
-  all:  ['Mimes', 'Trivia', 'Pictionary'],
-  solo: ['Petit Bac', 'Mot Melangés'],
-};
-
-// Letters used in Petit Bac (excluding X, Y, Z, W, K for French)
-export const PETIT_BAC_LETTERS = 'ABCDEFGHIJLMNOPQRSTU'.split('');
-
 const CATEGORIES_PER_PLAYER = 3;
 
 function generateCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
 function generateId()   { return Math.random().toString(36).substring(2, 14); }
-function shuffle(arr)   { return [...arr].sort(() => Math.random() - 0.5); }
 
 // ── Collect every category across all players in this lobby ─────────────────
 function getLobbyCategories(players) {
@@ -206,6 +197,36 @@ export function GameProvider({ children }) {
       pointsValue: null,
       winnerId:    null,
       bonusWinnerId: null,
+      // ── Added for the eight new minigames ──────────────────────────────
+      promptText:   null,   // Bluff, Punchline, Qui a écrit ça
+      trueAnswer:   null,   // Bluff
+      options:      null,   // Bluff — shuffled fakes + truth
+      submissions:  {},     // every text-entry game
+      picks:        {},     // Bluff
+      attributions: {},     // Qui a écrit ça
+      surveyPrompt: null,   // Sondage Éclair
+      surveyOptions: null,
+      answers:      {},     // Sondage Éclair — what you think
+      predictions:  {},     // Sondage Éclair — what you think the room thinks
+      tabooWord:    null,   // Mot Interdit
+      forbiddenWords: null,
+      guesses:      {},     // Mot Interdit
+      foundBy:      null,
+      spectrum:     null,   // Le Curseur
+      target:       null,
+      clue:         null,
+      seedWord:     null,   // Rimes Rapides
+      rhymePool:    null,
+      chain:        {},
+      activePlayerId: null,
+      turnDeadline: null,
+      drawings:     {},     // Croquis Croisés — one canvas per player
+      drawWords:    null,
+      revealOrder:  null,
+      revealIndex:  null,
+      voteDeadline: null,   // shared vote timeout
+      scores:       null,
+      awards:       null,
     });
   }
 
@@ -233,6 +254,25 @@ export function GameProvider({ children }) {
     await update(ref(db, `games/${gameId}/currentMinigame/votes`), { [myPlayerId]: choice });
   }
 
+  // ── Generic per-player writers ───────────────────────────────────────────
+  // The new minigames all store one value per player under a named map
+  // (submissions, picks, answers, predictions, guesses, attributions...), so
+  // they share these two instead of adding a context function per field.
+  async function setMyEntry(field, value) {
+    await update(ref(db, `games/${gameId}/currentMinigame/${field}`), {
+      [myPlayerId]: value ?? null,
+    });
+  }
+
+  async function pushEntry(field, value) {
+    await push(ref(db, `games/${gameId}/currentMinigame/${field}`), value);
+  }
+
+  // Host/turn-player override so a missing vote can never stall the round
+  async function closeVoting() {
+    await update(ref(db, `games/${gameId}/currentMinigame`), { voteDeadline: Date.now() });
+  }
+
   // Push a completed drawing stroke to Firebase (Pictionary)
   async function pushDrawingStroke(stroke) {
     await push(ref(db, `games/${gameId}/currentMinigame/strokes`), stroke);
@@ -249,19 +289,51 @@ export function GameProvider({ children }) {
     await update(ref(db, `games/${gameId}/currentMinigame`), { currentStroke: null });
   }
 
-  // Award points and advance to the next turn
-  async function completeMinigame(winnerId, bonusWinnerId = null) {
+  // ── Croquis Croisés — one canvas per player ──────────────────────────────
+  // Pictionary has a single shared canvas at currentMinigame/strokes. When
+  // everyone draws at once each player needs their own, so these write under
+  // drawings/{playerId} instead. Nothing here touches the Pictionary paths.
+  async function pushMyStroke(stroke) {
+    await push(ref(db, `games/${gameId}/currentMinigame/drawings/${myPlayerId}/strokes`), stroke);
+  }
+
+  async function updateMyCurrentStroke(stroke) {
+    await update(ref(db, `games/${gameId}/currentMinigame/drawings/${myPlayerId}`), {
+      currentStroke: stroke ?? null,
+    });
+  }
+
+  async function clearMyDrawing() {
+    await set(ref(db, `games/${gameId}/currentMinigame/drawings/${myPlayerId}`), {
+      strokes: {}, currentStroke: null,
+    });
+  }
+
+  // Award points and advance to the next turn.
+  //
+  // Takes a payout map — { playerId: points } — so a round can pay everyone
+  // something different. The old two-argument form still works: the seven
+  // original minigames call completeMinigame(winnerId, bonusWinnerId) and get
+  // pointsValue each, exactly as before.
+  async function completeMinigame(awardsOrWinnerId, bonusWinnerId = null) {
     const mg     = game.currentMinigame;
     const points = mg.pointsValue ?? 0;
+
+    let awards;
+    if (awardsOrWinnerId && typeof awardsOrWinnerId === 'object') {
+      awards = awardsOrWinnerId;
+    } else {
+      awards = {};
+      if (awardsOrWinnerId)  awards[awardsOrWinnerId]  = points;
+      if (bonusWinnerId)     awards[bonusWinnerId]     = (awards[bonusWinnerId] ?? 0) + points;
+    }
+
     const updates = {};
-    if (winnerId) {
-      const current = game.players[winnerId]?.points ?? 0;
-      updates[`players/${winnerId}/points`] = current + points;
-    }
-    if (bonusWinnerId) {
-      const current = game.players[bonusWinnerId]?.points ?? 0;
-      updates[`players/${bonusWinnerId}/points`] = current + points;
-    }
+    Object.entries(awards).forEach(([playerId, delta]) => {
+      if (!delta || !game.players[playerId]) return;
+      const current = game.players[playerId]?.points ?? 0;
+      updates[`players/${playerId}/points`] = Math.max(0, current + delta);
+    });
     // Advance turn
     const nextIndex = ((game.currentTurnIndex ?? 0) + 1) % game.playerOrder.length;
     updates['currentTurnIndex'] = nextIndex;
@@ -288,7 +360,8 @@ export function GameProvider({ children }) {
       isTPlayer, isPPlayer, isSpectator,
       kickedBy,
       error,
-      MINIGAMES, PETIT_BAC_LETTERS,
+      MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS,
+      availableMinigames,
       getLobbyPool,
       createGame, joinGame, loadGame,
       setReady, removePlayer, startGame,
@@ -297,7 +370,9 @@ export function GameProvider({ children }) {
       selectMinigameType, selectMinigame, selectOpponent,
       initMinigame, updateMinigame, setMinigameReady,
       submitTriviaAnswer, castVote, completeMinigame,
+      setMyEntry, pushEntry, closeVoting,
       pushDrawingStroke, updateCurrentStroke, clearDrawing,
+      pushMyStroke, updateMyCurrentStroke, clearMyDrawing,
     }}>
       {children}
     </GameContext.Provider>

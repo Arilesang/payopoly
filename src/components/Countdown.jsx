@@ -1,29 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Countdown({ startedAt, onExpire, total = 30 }) {
   const [remaining, setRemaining] = useState(total);
-  const [expired, setExpired]     = useState(false);
+
+  // onExpire must fire exactly once per timer. A plain `expired` state cannot
+  // do that here: the interval closure is created when startedAt changes and
+  // never sees later state, so it either refires every tick or — on a second
+  // countdown in the same round — never fires at all. A ref reset alongside
+  // the interval gives one shot per startedAt.
+  const firedRef    = useRef(false);
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => { onExpireRef.current = onExpire; });
 
   useEffect(() => {
     if (!startedAt) return;
+    firedRef.current = false;
+
     function tick() {
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
       const left    = Math.max(0, total - elapsed);
       setRemaining(left);
-      if (left === 0 && !expired) {
-        setExpired(true);
-        if (onExpire) onExpire();
+      if (left === 0 && !firedRef.current) {
+        firedRef.current = true;
+        onExpireRef.current?.();
       }
     }
     tick();
-    const id = setInterval(tick, 500);
+    const id = setInterval(tick, 250);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startedAt]);
+  }, [startedAt, total]);
 
-  const pct     = (remaining / total) * 100;
-  const urgent  = remaining <= 10;
-  const color   = remaining > (total * 0.5) ? '#27ae60' : remaining > (total * 0.25) ? '#f39c12' : '#e74c3c';
+  const pct    = (remaining / total) * 100;
+  const urgent = remaining <= Math.min(10, total * 0.34);
+  const color  = remaining > (total * 0.5) ? '#27ae60' : remaining > (total * 0.25) ? '#f39c12' : '#e74c3c';
 
   return (
     <div className="countdown-wrap">
