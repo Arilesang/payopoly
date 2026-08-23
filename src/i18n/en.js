@@ -80,4 +80,17 @@ export default {
     personalLabel: 'Personal',
     close: 'Close',
   },
+  rules: {
+    button: 'Mini-games',
+    title: 'The mini-games',
+    subtitle: '{{count}} games, {{count}} ways to score',
+    filterAll: 'All',
+    random: 'Surprise me',
+    players: '{{n}}+ players',
+    howItWorks: 'How it plays',
+    scoring: 'Scoring',
+    tip: 'Pro tip',
+    tapHint: '👆 Tap a card to unfold its rules',
+    close: 'Close',
+  },
 };

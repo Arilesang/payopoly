@@ -288,7 +288,7 @@ p  { font-size: 15px; line-height: 1.5; }
   padding-top: 8px;
 }
 .game-title { font-size: 22px; font-weight: 800; color: var(--accent); }
-.header-actions { display: flex; gap: 8px; }
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
 .turn-area { display: flex; flex-direction: column; gap: 12px; flex: 1; }
 
@@ -816,4 +816,348 @@ p  { font-size: 15px; line-height: 1.5; }
 
 @media (prefers-reduced-motion: reduce) {
   .bar-fill, .shot-clock-fill { transition: none; }
+}
+
+/* ══ Mini-game rulebook ══════════════════════════════════════ */
+
+.rules-overlay { align-items: flex-end; }
+
+.rules-sheet {
+  background: var(--bg-dark);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  height: 92svh;
+  padding: 8px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+  animation: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.rules-grabber {
+  width: 40px; height: 4px; flex-shrink: 0;
+  border-radius: 2px;
+  background: var(--border);
+  margin: 2px auto 4px;
+}
+
+.rules-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.rules-head-text { display: flex; flex-direction: column; gap: 2px; }
+.rules-title {
+  font-size: 22px; font-weight: 800; color: var(--accent);
+  letter-spacing: -0.3px; line-height: 1.15;
+}
+.rules-sub { font-size: 13px; color: var(--text-muted); }
+
+/* ── Filter tabs + dice shuffle ───────────────────────────── */
+.rules-tools { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.rules-filters {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.rules-filters::-webkit-scrollbar { display: none; }
+
+.rules-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 13px; font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+.rules-tab:active { transform: scale(0.95); }
+.rules-tab-count {
+  font-size: 11px; font-weight: 800;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-variant-numeric: tabular-nums;
+}
+.rules-tab.is-on { color: #fff; border-color: transparent; }
+.rules-tab.is-on .rules-tab-count { background: rgba(0,0,0,0.25); }
+.rules-tab-any.is-on  { background: var(--accent); color: #0b2215; }
+.rules-tab-solo.is-on { background: var(--blue); }
+.rules-tab-duel.is-on { background: var(--danger); }
+.rules-tab-all.is-on  { background: var(--success); }
+
+.rules-dice {
+  flex-shrink: 0;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.rules-dice:hover  { border-color: var(--accent); }
+.rules-dice:active { transform: scale(0.9); }
+.rules-dice.is-rolling { animation: dice-tumble 0.6s ease-out; }
+@keyframes dice-tumble {
+  0%   { transform: rotate(0)      scale(1); }
+  35%  { transform: rotate(220deg) scale(1.25); }
+  70%  { transform: rotate(400deg) scale(0.95); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ── Scrolling card list ──────────────────────────────────── */
+.rules-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 2px 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rules-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 6px 0 2px;
+}
+
+.rules-done { flex-shrink: 0; }
+
+/* ── A single game card ───────────────────────────────────── */
+.rule-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--type-color, var(--border));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s, background 0.2s;
+  animation: rule-in 0.3s ease-out backwards;
+  animation-delay: calc(var(--i) * 28ms);
+}
+@keyframes rule-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rule-solo { --type-color: var(--blue); }
+.rule-duel { --type-color: var(--danger); }
+.rule-all  { --type-color: var(--success); }
+
+.rule-card.is-open {
+  background: var(--bg-card2);
+  border-color: var(--type-color);
+}
+
+.rule-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.rule-emoji {
+  flex-shrink: 0;
+  width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 23px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.rule-card.is-open .rule-emoji {
+  border-color: var(--type-color);
+  animation: emoji-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes emoji-pop {
+  0%   { transform: scale(1)    rotate(0); }
+  40%  { transform: scale(1.22) rotate(-9deg); }
+  70%  { transform: scale(1.05) rotate(6deg); }
+  100% { transform: scale(1)    rotate(0); }
+}
+
+.rule-head-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rule-name    { font-size: 16px; font-weight: 700; }
+.rule-tagline { font-size: 12.5px; color: var(--text-muted); line-height: 1.35; }
+
+.rule-chevron {
+  flex-shrink: 0;
+  font-size: 22px;
+  color: var(--text-muted);
+  transition: transform 0.25s ease, color 0.2s;
+}
+.rule-card.is-open .rule-chevron { transform: rotate(90deg); color: var(--type-color); }
+
+.rule-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.rule-badge,
+.rule-chip {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.rule-chip { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+.rule-badge-solo { background: rgba(41,128,185,0.22); color: #74b9e0; }
+.rule-badge-duel { background: rgba(192,57,43,0.22);  color: #ff9c8f; }
+.rule-badge-all  { background: rgba(39,174,96,0.22);  color: #5fd68d; }
+
+/* Collapsible body — grid-rows keeps the open height automatic. */
+.rule-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+.rule-card.is-open .rule-body { grid-template-rows: 1fr; }
+
+.rule-body-inner {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+.rule-card.is-open .rule-body-inner { padding-top: 4px; }
+
+.rule-section-label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--type-color);
+}
+
+/* ── The flow, as a numbered timeline ─────────────────────── */
+.rule-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  padding-left: 2px;
+}
+.rule-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  position: relative;
+}
+/* Connector between consecutive step bullets. */
+.rule-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 11px; top: 24px; bottom: -10px;
+  width: 2px;
+  background: linear-gradient(var(--type-color), transparent);
+  opacity: 0.35;
+}
+.rule-step-num {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--type-color);
+  color: #fff;
+  font-size: 12px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 3px var(--bg-card2);
+}
+.rule-step-text { font-size: 14px; line-height: 1.45; padding-top: 3px; }
+
+.rule-card.is-open .rule-step {
+  animation: step-in 0.3s ease-out backwards;
+  animation-delay: calc(120ms + var(--s) * 55ms);
+}
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Scoring + tip callouts ───────────────────────────────── */
+.rule-note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.rule-note strong {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 2px;
+}
+.rule-note-icon { font-size: 15px; line-height: 1.3; flex-shrink: 0; }
+
+.rule-note-score {
+  background: rgba(240,192,64,0.09);
+  border: 1px solid rgba(240,192,64,0.25);
+}
+.rule-note-score strong { color: var(--accent); }
+
+.rule-note-tip {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.rule-note-tip strong { color: var(--text); }
+
+/* ── Entry points ─────────────────────────────────────────── */
+.btn-rules {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px dashed rgba(240,192,64,0.4);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.btn-rules:hover  { background: rgba(240,192,64,0.08); border-color: var(--accent); }
+.btn-rules:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rules-sheet,
+  .rule-card,
+  .rule-card.is-open .rule-step,
+  .rules-dice.is-rolling,
+  .rule-card.is-open .rule-emoji { animation: none; }
+  .rule-body, .rule-chevron, .rule-emoji { transition: none; }
 }

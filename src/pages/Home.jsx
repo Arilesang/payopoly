@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
+import MinigameRulesPopup from '../components/MinigameRulesPopup';
 
 export default function Home() {
   const { t, lang, toggleLang } = useLang();
@@ -12,6 +13,7 @@ export default function Home() {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   async function handleCreate() {
     if (!name.trim()) return;
@@ -57,6 +59,9 @@ export default function Home() {
             </button>
             <button className="btn btn-secondary" onClick={() => setView('join_code')}>
               {t('home.joinGame')}
+            </button>
+            <button className="btn-rules" onClick={() => setShowRules(true)}>
+              🎮 {t('rules.button')}
             </button>
           </div>
         )}
@@ -126,6 +131,8 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {showRules && <MinigameRulesPopup onClose={() => setShowRules(false)} />}
     </div>
   );
 }

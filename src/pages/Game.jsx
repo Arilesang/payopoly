@@ -4,6 +4,7 @@ import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
 import SpinWheel from '../components/SpinWheel';
 import CategoryPopup from '../components/CategoryPopup';
+import MinigameRulesPopup from '../components/MinigameRulesPopup';
 import Leaderboard from '../components/Leaderboard';
 
 const CATEGORIES_TO_ENTER = 3;
@@ -20,6 +21,7 @@ export default function Game() {
   const navigate = useNavigate();
 
   const [showCategories, setShowCategories] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [categoryInput, setCategoryInput] = useState('');
   const [submittedCount, setSubmittedCount] = useState(0);
 
@@ -141,6 +143,15 @@ export default function Game() {
         <div className="game-header">
           <h1 className="game-title">{t('game.title')}</h1>
           <div className="header-actions">
+            {/* Icon only: a labelled button pushes the header onto a second row. */}
+            <button
+              className="btn btn-small btn-ghost"
+              onClick={() => setShowRules(true)}
+              title={t('rules.button')}
+              aria-label={t('rules.button')}
+            >
+              🎮
+            </button>
             <button className="btn btn-small btn-ghost" onClick={() => setShowCategories(true)}>
               {t('game.myCategories')}
             </button>
@@ -188,6 +199,8 @@ export default function Game() {
             onClose={() => setShowCategories(false)}
           />
         )}
+
+        {showRules && <MinigameRulesPopup onClose={() => setShowRules(false)} />}
       </div>
     );
   }

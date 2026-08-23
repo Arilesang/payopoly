@@ -80,4 +80,17 @@ export default {
     personalLabel: 'Personnelle',
     close: 'Fermer',
   },
+  rules: {
+    button: 'Mini-jeux',
+    title: 'Les mini-jeux',
+    subtitle: '{{count}} jeux, {{count}} façons de marquer',
+    filterAll: 'Tous',
+    random: 'Au hasard',
+    players: '{{n}}+ joueurs',
+    howItWorks: 'Comment ça se joue',
+    scoring: 'Les points',
+    tip: 'Le truc en plus',
+    tapHint: '👆 Touche une carte pour déplier ses règles',
+    close: 'Fermer',
+  },
 };
