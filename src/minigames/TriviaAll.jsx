@@ -1,3 +1,4 @@
+import MgHeader from '../components/MgHeader';
 // ALL — Trivia (AI-generated MCQ, everyone plays simultaneously)
 // Phases: dice → category_select → ready_check → playing → results
 import { useEffect, useState } from 'react';
@@ -206,13 +207,4 @@ export default function TriviaAll() {
   }
 
   return null;
-}
-
-function MgHeader({ title, subtitle }) {
-  return (
-    <div className="mg-header">
-      <h1 className="mg-title">{title}</h1>
-      {subtitle && <p className="mg-subtitle">{subtitle}</p>}
-    </div>
-  );
 }

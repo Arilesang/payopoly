@@ -1,14 +1,15 @@
 import { useRef, useEffect, useState } from 'react';
 
 const COLORS = [
-  '#e74c3c', '#3498db', '#2ecc71', '#f39c12',
-  '#9b59b6', '#1abc9c', '#e67e22', '#c0392b',
-  '#2980b9', '#27ae60', '#d35400', '#8e44ad',
+  '#b9431b', '#e9ae58', '#f3e9d5', '#e6d9be', '#933619', '#d39853',
 ];
+const INK = '#582b2d';
+const PAPER = '#fff1d9';
 
 export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false }) {
   const canvasRef = useRef(null);
   const angleRef = useRef(0);
+  const animationRef = useRef(null);
   const [spinning, setSpinning] = useState(false);
   const [done, setDone] = useState(false);
   const [result, setResult] = useState(null);
@@ -17,6 +18,8 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     drawWheel(angleRef.current);
   }, [items]);
 
+  useEffect(() => () => cancelAnimationFrame(animationRef.current), []);
+
   function drawWheel(angle) {
     const canvas = canvasRef.current;
     if (!canvas || items.length === 0) return;
@@ -24,7 +27,7 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     const size = canvas.width;
     const cx = size / 2;
     const cy = size / 2;
-    const radius = cx - 8;
+    const radius = cx - 16;
     const slice = (2 * Math.PI) / items.length;
 
     ctx.clearRect(0, 0, size, size);
@@ -40,8 +43,8 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       ctx.closePath();
       ctx.fillStyle = COLORS[i % COLORS.length];
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Label
@@ -49,18 +52,39 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       ctx.translate(cx, cy);
       ctx.rotate(start + slice / 2);
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = i % COLORS.length === 0 || i % COLORS.length === 4 ? PAPER : INK;
       ctx.font = `bold ${items.length > 8 ? 10 : 12}px sans-serif`;
       const label = item.length > 14 ? item.slice(0, 13) + '…' : item;
       ctx.fillText(label, radius - 10, 4);
       ctx.restore();
     });
 
+    // Burgundy stage rim with warm marquee bulbs.
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius + 5, 0, 2 * Math.PI);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 10;
+    ctx.stroke();
+    for (let i = 0; i < 24; i++) {
+      const bulbAngle = i * Math.PI / 12;
+      ctx.beginPath();
+      ctx.arc(cx + (radius + 5) * Math.cos(bulbAngle), cy + (radius + 5) * Math.sin(bulbAngle), 2, 0, 2 * Math.PI);
+      ctx.fillStyle = '#e9ae58';
+      ctx.fill();
+    }
+
     // Center hub
     ctx.beginPath();
     ctx.arc(cx, cy, 16, 0, 2 * Math.PI);
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = PAPER;
     ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.font = 'bold 18px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('P', cx, cy + 6);
 
     // Pointer triangle at top center (drawn on-canvas for exact alignment)
     ctx.beginPath();
@@ -68,15 +92,13 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     ctx.lineTo(cx + 12, 0);
     ctx.lineTo(cx, 18);
     ctx.closePath();
-    ctx.fillStyle = '#e67e22';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
+    ctx.fillStyle = INK;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
 
   function spin() {
-    if (spinning || done || disabled) return;
+    if (spinning || done || disabled || items.length === 0) return;
     setSpinning(true);
 
     const forcedIndex = forcedResult !== null ? items.indexOf(forcedResult) : -1;
@@ -90,23 +112,23 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     let delta = target - current;
     while (delta < 0) delta += 2 * Math.PI;
 
-    const extraSpins = (5 + Math.random() * 3) * 2 * Math.PI;
+    const extraSpins = (5 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
     const totalRotation = extraSpins + delta;
 
-    const duration = 4000;
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 4000;
     const startTime = performance.now();
     const startAngle = angleRef.current;
 
     function animate(now) {
       const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
+      const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 4); // quartic ease-out
       const angle = startAngle + totalRotation * eased;
       angleRef.current = angle;
       drawWheel(angle);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animationRef.current = requestAnimationFrame(animate);
       } else {
         setSpinning(false);
         setDone(true);
@@ -115,15 +137,15 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       }
     }
 
-    requestAnimationFrame(animate);
+    animationRef.current = requestAnimationFrame(animate);
   }
 
   return (
     <div className="spin-wheel-container">
-      <div className="wheel-wrapper">
-        <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" />
+      <div className={`wheel-wrapper ${spinning ? 'is-spinning' : ''}`}>
+        <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" role="img" aria-label={items.join(', ')} />
       </div>
-      {result && <p className="wheel-result">{result}</p>}
+      {result && <p className="wheel-result" aria-live="polite">{result}</p>}
       <button
         className="btn btn-accent"
         onClick={spin}

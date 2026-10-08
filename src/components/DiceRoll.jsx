@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 export default function DiceRoll({ onResult, autoRoll = false }) {
-  const [face, setFace]       = useState('🎲');
+  const [face, setFace]       = useState('?');
   const [rolling, setRolling] = useState(false);
   const [result, setResult]   = useState(null);
 

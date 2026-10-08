@@ -88,7 +88,7 @@ export default function Game() {
     return (
       <div className="page page-prep">
         <button className="lang-toggle" onClick={toggleLang}>
-          {lang === 'fr' ? '🇬🇧 EN' : '🇫🇷 FR'}
+          {lang === 'fr' ? 'EN' : 'FR'}
         </button>
 
         <h1>{t('prep.title')}</h1>

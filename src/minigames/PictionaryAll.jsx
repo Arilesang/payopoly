@@ -1,3 +1,4 @@
+import MgHeader from '../components/MgHeader';
 // ALL — Pictionary
 // Phases: dice → category_select → word_reveal → playing → voting → bonus_pick → complete
 import { useEffect, useState } from 'react';
@@ -244,13 +245,4 @@ export default function PictionaryAll() {
   }
 
   return null;
-}
-
-function MgHeader({ title, subtitle }) {
-  return (
-    <div className="mg-header">
-      <h1 className="mg-title">{title}</h1>
-      {subtitle && <p className="mg-subtitle">{subtitle}</p>}
-    </div>
-  );
 }

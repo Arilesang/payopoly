@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
+import ShowMarquee from '../components/ShowMarquee';
 
 export default function Home() {
   const { t, lang, toggleLang } = useLang();
@@ -45,25 +46,30 @@ export default function Home() {
   return (
     <div className="page page-home">
       <button className="lang-toggle" onClick={toggleLang}>
-        {lang === 'fr' ? '🇬🇧 EN' : '🇫🇷 FR'}
+        {lang === 'fr' ? 'EN' : 'FR'}
       </button>
 
       <div className="home-content">
-        <h1 className="home-title">{t('home.title')}</h1>
+        <p className="show-eyebrow">{t('home.showKicker')}</p>
+        <h1 className="home-title" aria-label={t('home.title')}><span>Payo</span><span>Poly</span></h1>
+        <p className="home-showline">{t('home.showline')}</p>
         <p className="home-subtitle">{t('home.subtitle')}</p>
 
         {view === 'main' && (
-          <div className="btn-stack">
-            <button className="btn btn-primary" onClick={() => setView('create_name')}>
-              {t('home.createGame')}
-            </button>
-            <button className="btn btn-secondary" onClick={() => setView('join_code')}>
-              {t('home.joinGame')}
-            </button>
-            <button className="btn-rules" onClick={() => setShowRules(true)}>
-              🎮 {t('rules.button')}
-            </button>
-          </div>
+          <>
+            <ShowMarquee />
+            <div className="btn-stack home-actions">
+              <button className="btn btn-primary" onClick={() => setView('create_name')}>
+                {t('home.createGame')}<span aria-hidden="true">↗</span>
+              </button>
+              <button className="btn btn-secondary" onClick={() => setView('join_code')}>
+                {t('home.joinGame')}
+              </button>
+              <button className="btn-rules" onClick={() => setShowRules(true)}>
+                {t('rules.button')}<span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </>
         )}
 
         {view === 'create_name' && (
@@ -71,6 +77,7 @@ export default function Home() {
             <h2>{t('home.enterName')}</h2>
             <input
               className="input"
+              aria-label={t('home.enterName')}
               placeholder={t('home.namePlaceholder')}
               value={name}
               onChange={e => setName(e.target.value)}
@@ -81,7 +88,7 @@ export default function Home() {
               <button className="btn btn-primary" onClick={handleCreate} disabled={!name.trim() || loading}>
                 {loading ? '...' : t('home.confirm')}
               </button>
-              <button className="btn btn-ghost" onClick={() => setView('main')}>←</button>
+              <button className="btn btn-ghost" onClick={() => setView('main')} aria-label={t('home.back')}>←</button>
             </div>
           </div>
         )}
@@ -92,6 +99,7 @@ export default function Home() {
             <form onSubmit={handleCodeSubmit}>
               <input
                 className="input input-code"
+                aria-label={t('home.roomCodePlaceholder')}
                 placeholder={t('home.roomCodePlaceholder')}
                 value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
@@ -105,7 +113,7 @@ export default function Home() {
                 <button className="btn btn-primary" type="submit" disabled={!code.trim()}>
                   {t('home.join')}
                 </button>
-                <button className="btn btn-ghost" type="button" onClick={() => setView('main')}>←</button>
+                <button className="btn btn-ghost" type="button" onClick={() => setView('main')} aria-label={t('home.back')}>←</button>
               </div>
             </form>
           </div>
@@ -116,6 +124,7 @@ export default function Home() {
             <h2>{t('home.enterName')}</h2>
             <input
               className="input"
+              aria-label={t('home.enterName')}
               placeholder={t('home.namePlaceholder')}
               value={name}
               onChange={e => setName(e.target.value)}
@@ -126,10 +135,11 @@ export default function Home() {
               <button className="btn btn-primary" onClick={handleJoin} disabled={!name.trim() || loading}>
                 {loading ? '...' : t('home.confirm')}
               </button>
-              <button className="btn btn-ghost" onClick={() => setView('join_code')}>←</button>
+              <button className="btn btn-ghost" onClick={() => setView('join_code')} aria-label={t('home.back')}>←</button>
             </div>
           </div>
         )}
+        <p className="home-footer">{t('game.solo')} / {t('game.duel')} / {t('game.all')}</p>
       </div>
 
       {showRules && <MinigameRulesPopup onClose={() => setShowRules(false)} />}

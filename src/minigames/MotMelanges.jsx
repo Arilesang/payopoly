@@ -1,3 +1,4 @@
+import MgHeader from '../components/MgHeader';
 // Solo — Mot Melangés (AI-generated jumbled word)
 // Phases: dice → category_display → playing → voting → complete
 import { useEffect, useState } from 'react';
@@ -174,13 +175,4 @@ export default function MotMelanges() {
   }
 
   return null;
-}
-
-function MgHeader({ title, subtitle }) {
-  return (
-    <div className="mg-header">
-      <h1 className="mg-title">{title}</h1>
-      {subtitle && <p className="mg-subtitle">{subtitle}</p>}
-    </div>
-  );
 }

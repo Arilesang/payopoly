@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 
-const COLORS = ['#1a1a1a', '#e74c3c', '#3498db', '#27ae60', '#f39c12', '#9b59b6'];
+const COLORS = ['#582b2d', '#b9431b', '#325a8b', '#526344', '#e9ae58', '#855573'];
 const PEN_W    = 0.010; // normalized stroke width (fraction of canvas width)
 const ERASER_W = 0.060;
 
@@ -155,6 +155,8 @@ export default function DrawingCanvas({ isDrawer, strokes, currentStroke, onStro
                 key={c}
                 className={`color-btn${color === c && !isEraser ? ' active' : ''}`}
                 style={{ background: c }}
+                aria-label={c}
+                aria-pressed={color === c && !isEraser}
                 onClick={() => { setColor(c); setIsEraser(false); }}
               />
             ))}
@@ -162,6 +164,8 @@ export default function DrawingCanvas({ isDrawer, strokes, currentStroke, onStro
               className={`color-btn eraser-btn${isEraser ? ' active' : ''}`}
               onClick={() => setIsEraser(true)}
               title="Gomme"
+              aria-label="Gomme"
+              aria-pressed={isEraser}
             >⌫</button>
           </div>
           <button className="btn btn-ghost btn-small" style={{ width: 'auto' }} onClick={onClear}>

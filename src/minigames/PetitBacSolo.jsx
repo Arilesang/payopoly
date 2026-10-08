@@ -1,3 +1,4 @@
+import MgHeader from '../components/MgHeader';
 // Solo — Petit Bac
 // Phases: dice → letter → playing → voting → complete
 import { useEffect } from 'react';
@@ -140,13 +141,4 @@ export default function PetitBacSolo() {
   }
 
   return null;
-}
-
-function MgHeader({ title, subtitle }) {
-  return (
-    <div className="mg-header">
-      <h1 className="mg-title">{title}</h1>
-      {subtitle && <p className="mg-subtitle">{subtitle}</p>}
-    </div>
-  );
 }

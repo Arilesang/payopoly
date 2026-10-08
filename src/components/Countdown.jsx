@@ -32,12 +32,12 @@ export default function Countdown({ startedAt, onExpire, total = 30 }) {
 
   const pct    = (remaining / total) * 100;
   const urgent = remaining <= Math.min(10, total * 0.34);
-  const color  = remaining > (total * 0.5) ? '#27ae60' : remaining > (total * 0.25) ? '#f39c12' : '#e74c3c';
+  const color  = remaining > (total * 0.5) ? 'var(--success)' : remaining > (total * 0.25) ? 'var(--accent)' : 'var(--danger)';
 
   return (
     <div className="countdown-wrap">
-      <svg className="countdown-ring" viewBox="0 0 60 60">
-        <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
+      <svg className="countdown-ring" viewBox="0 0 60 60" role="img" aria-label={`${remaining}s`}>
+        <circle cx="30" cy="30" r="26" fill="var(--bg-card)" stroke="var(--border)" strokeWidth="4" />
         <circle
           cx="30" cy="30" r="26" fill="none"
           stroke={color} strokeWidth="4"
@@ -47,7 +47,7 @@ export default function Countdown({ startedAt, onExpire, total = 30 }) {
           transform="rotate(-90 30 30)"
           style={{ transition: 'stroke-dashoffset 0.4s linear, stroke 0.5s' }}
         />
-        <text x="30" y="35" textAnchor="middle" fill={urgent ? color : '#fff'}
+        <text x="30" y="35" textAnchor="middle" fill={urgent ? color : 'var(--text)'}
           fontSize="16" fontWeight="bold" className={urgent ? 'countdown-urgent' : ''}>
           {remaining}
         </text>

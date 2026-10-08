@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import fr from '../i18n/fr';
 import en from '../i18n/en';
 
@@ -8,6 +8,8 @@ const LangContext = createContext();
 
 export function LangProvider({ children }) {
   const [lang, setLang] = useState('fr');
+
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   function t(path) {
     const keys = path.split('.');

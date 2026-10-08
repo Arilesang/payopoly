@@ -1,9 +1,9 @@
-// Shared minigame chrome. The seven original minigames each declare their own
-// copy of this; the eight new ones import it instead.
+// Shared stage header for every minigame and phase.
 
 export default function MgHeader({ title, subtitle }) {
   return (
     <div className="mg-header">
+      <p className="mg-brand">PayoPoly</p>
       <h1 className="mg-title">{title}</h1>
       {subtitle && <p className="mg-subtitle">{subtitle}</p>}
     </div>

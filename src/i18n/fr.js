@@ -1,7 +1,12 @@
 export default {
   home: {
     title: 'PayoPoly',
-    subtitle: 'Le jeu de plateau nouvelle génération',
+    subtitle: 'Des mini-jeux. Tes amis. Et une bonne dose de mauvaise foi.',
+    showKicker: 'Ce soir, c’est vous la star',
+    showline: 'Le grand jeu entre amis',
+    marqueeLine: 'À VOUS DE',
+    marqueeTitle: 'JOUER !',
+    back: 'Retour',
     createGame: 'Créer une partie',
     joinGame: 'Rejoindre une partie',
     roomCodePlaceholder: 'Code de la salle',

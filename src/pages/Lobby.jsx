@@ -69,7 +69,7 @@ export default function Lobby() {
   return (
     <div className="page page-lobby">
       <button className="lang-toggle" onClick={toggleLang}>
-        {lang === 'fr' ? '🇬🇧 EN' : '🇫🇷 FR'}
+        {lang === 'fr' ? 'EN' : 'FR'}
       </button>
 
       <div className="lobby-header">
@@ -94,14 +94,14 @@ export default function Lobby() {
                 {id === game.hostId ? t('lobby.host') : t('lobby.player')}
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="player-actions">
               <span className={`status-badge ${player.ready ? 'ready' : 'not-ready'}`}>
                 {player.ready ? t('lobby.ready') : t('lobby.notReady')}
               </span>
               {isHost && id !== myPlayerId && (
                 <button
-                  className="btn btn-small btn-ghost"
-                  style={{ color: 'var(--danger, #e74c3c)', padding: '2px 8px', fontSize: '0.75rem' }}
+                  className="btn btn-small btn-ghost remove-player"
+                  aria-label={`${t('game.removePlayer')}: ${player.name}`}
                   onClick={() => removePlayer(id)}
                 >
                   ✕

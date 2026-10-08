@@ -1,7 +1,12 @@
 export default {
   home: {
     title: 'PayoPoly',
-    subtitle: 'The next-generation board game',
+    subtitle: 'Mini-games. Your friends. And a little friendly rivalry.',
+    showKicker: 'Tonight, you’re the star',
+    showline: 'The big game with friends',
+    marqueeLine: 'IT’S TIME TO',
+    marqueeTitle: 'PLAY!',
+    back: 'Back',
     createGame: 'Create a game',
     joinGame: 'Join a game',
     roomCodePlaceholder: 'Room code',

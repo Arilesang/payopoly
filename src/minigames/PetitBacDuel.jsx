@@ -1,3 +1,4 @@
+import MgHeader from '../components/MgHeader';
 // Duel — Petit Bac
 // Phases: dice → letter → playing → voting → complete
 import { useEffect } from 'react';
@@ -148,14 +149,6 @@ export default function PetitBacDuel() {
   return null;
 }
 
-function MgHeader({ title, subtitle }) {
-  return (
-    <div className="mg-header">
-      <h1 className="mg-title">{title}</h1>
-      {subtitle && <p className="mg-subtitle">{subtitle}</p>}
-    </div>
-  );
-}
 function Waiting({ text }) {
   return <p className="muted" style={{ textAlign: 'center' }}>{text}</p>;
 }

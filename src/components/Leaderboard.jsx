@@ -12,41 +12,45 @@ export default function Leaderboard({ players, t }) {
   return (
     <div className="leaderboard card">
       <h3 className="leaderboard-title">{t('game.leaderboard')}</h3>
-      {sorted.map((p, i) => (
-        <div key={p.id} className="leaderboard-row">
-          <span className="lb-rank">{i + 1}.</span>
-          <span className="lb-name">{p.name}</span>
-          <span className="lb-points">{p.points} {t('game.points')}</span>
-          {devMode && (
-            <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto' }}>
+      <div className="leaderboard-grid">
+        {sorted.map((p, i) => (
+          <div key={p.id} className={`leaderboard-row ${i === 0 ? 'is-leading' : ''}`}>
+            <span className="lb-rank" aria-label={`${i + 1}`}>{i === 0 ? '★' : `${i + 1}.`}</span>
+            <span className="lb-name" title={p.name}>{p.name}</span>
+            <span className="lb-points">{p.points}<small> {t('game.points')}</small></span>
+            {(devMode || (isHost && p.id !== myPlayerId && !isMidMinigame)) && <div className="lb-controls">
+            {devMode && (
+              <>
+                <button
+                  className="btn btn-small btn-ghost"
+                  aria-label={`${p.name} −1 ${t('game.points')}`}
+                  onClick={() => adjustPoints(p.id, -1)}
+                >
+                  −
+                </button>
+                <button
+                  className="btn btn-small btn-ghost"
+                  aria-label={`${p.name} +1 ${t('game.points')}`}
+                  onClick={() => adjustPoints(p.id, 1)}
+                >
+                  +
+                </button>
+              </>
+            )}
+            {isHost && p.id !== myPlayerId && !isMidMinigame && (
               <button
                 className="btn btn-small btn-ghost"
-                style={{ padding: '2px 8px', minWidth: 28 }}
-                onClick={() => adjustPoints(p.id, -1)}
+                onClick={() => removePlayer(p.id)}
+                title={t('game.removePlayer')}
+                aria-label={`${t('game.removePlayer')}: ${p.name}`}
               >
-                −
+                ✕
               </button>
-              <button
-                className="btn btn-small btn-ghost"
-                style={{ padding: '2px 8px', minWidth: 28 }}
-                onClick={() => adjustPoints(p.id, 1)}
-              >
-                +
-              </button>
-            </div>
-          )}
-          {isHost && p.id !== myPlayerId && !isMidMinigame && (
-            <button
-              className="btn btn-small btn-ghost"
-              style={{ color: 'var(--danger, #e74c3c)', padding: '2px 8px', fontSize: '0.75rem', marginLeft: devMode ? '4px' : 'auto' }}
-              onClick={() => removePlayer(p.id)}
-              title={t('game.removePlayer')}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      ))}
+            )}
+            </div>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
