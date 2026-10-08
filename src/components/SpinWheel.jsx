@@ -1,3 +1,5 @@
+import { useText } from '../context/useText';
+import { useLang } from '../context/LangContext';
 import { useRef, useEffect, useState } from 'react';
 
 const COLORS = [
@@ -6,16 +8,21 @@ const COLORS = [
   '#2980b9', '#27ae60', '#d35400', '#8e44ad',
 ];
 
-export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false }) {
+export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false, autoSpin = false }) {
+  const tr = useText();
+  const { lang } = useLang();
   const canvasRef = useRef(null);
   const angleRef = useRef(0);
+  const spinStartedRef = useRef(false);
   const [spinning, setSpinning] = useState(false);
   const [done, setDone] = useState(false);
   const [result, setResult] = useState(null);
 
   useEffect(() => {
     drawWheel(angleRef.current);
-  }, [items]);
+  }, [items, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (autoSpin) spin(); }, [autoSpin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function drawWheel(angle) {
     const canvas = canvasRef.current;
@@ -51,7 +58,8 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       ctx.textAlign = 'right';
       ctx.fillStyle = '#fff';
       ctx.font = `bold ${items.length > 8 ? 10 : 12}px sans-serif`;
-      const label = item.length > 14 ? item.slice(0, 13) + '…' : item;
+      const translated = tr(item);
+      const label = translated.length > 14 ? translated.slice(0, 13) + '…' : translated;
       ctx.fillText(label, radius - 10, 4);
       ctx.restore();
     });
@@ -76,7 +84,8 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
   }
 
   function spin() {
-    if (spinning || done || disabled) return;
+    if (spinStartedRef.current || spinning || done || disabled) return;
+    spinStartedRef.current = true;
     setSpinning(true);
 
     const forcedIndex = forcedResult !== null ? items.indexOf(forcedResult) : -1;
@@ -90,10 +99,10 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     let delta = target - current;
     while (delta < 0) delta += 2 * Math.PI;
 
-    const extraSpins = (5 + Math.random() * 3) * 2 * Math.PI;
+    const extraSpins = (5 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
     const totalRotation = extraSpins + delta;
 
-    const duration = 4000;
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : autoSpin ? 1600 : 4000;
     const startTime = performance.now();
     const startAngle = angleRef.current;
 
@@ -123,7 +132,7 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       <div className="wheel-wrapper">
         <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" />
       </div>
-      {result && <p className="wheel-result">{result}</p>}
+      {result && <p className="wheel-result">{tr(result)}</p>}
       <button
         className="btn btn-accent"
         onClick={spin}

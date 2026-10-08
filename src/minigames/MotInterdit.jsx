@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // ALL (showcase → race) — Le Mot Interdit
 // The turn player describes a word out loud without saying five forbidden ones.
 // Everyone else races to type it. First correct guess ends the round — no vote.
@@ -12,7 +13,8 @@ import { isMatch } from '../utils';
 const ROUND_SECONDS = 90;
 
 export default function MotInterdit() {
-  const { game, myPlayerId, isTPlayer, updateMinigame, pushEntry, completeMinigame } = useGame();
+  const tr = useText();
+  const { game, myPlayerId, isTPlayer, updateMinigame, pushEntry, completeMinigame,  isController, fetchContent,} = useGame();
 
   const mg      = game?.currentMinigame;
   const players = game?.players ?? {};
@@ -30,12 +32,12 @@ export default function MotInterdit() {
 
   // ── TPlayer judges: only they hold the word, so only they can score it ───
   useEffect(() => {
-    if (mg?.phase !== 'playing' || !isTPlayer || !mg.tabooWord || mg.foundBy) return;
+    if (mg?.phase !== 'playing' || !isController || !mg.tabooWord || mg.foundBy) return;
     const hit = guesses.find(g => isMatch(g.text, mg.tabooWord));
     if (!hit) return;
     updateMinigame({ foundBy: hit.playerId, foundAt: hit.at ?? Date.now(), phase: 'complete' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.guesses, mg?.phase]);
+  }, [mg?.guesses, mg?.phase, isController]);
 
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
@@ -54,12 +56,12 @@ export default function MotInterdit() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Mot Interdit" subtitle={tName} />
+        <MgHeader title={tr("Mot Interdit")} subtitle={tName} />
         {isTPlayer
           ? <DiceRoll onResult={val => updateMinigame({
               diceValue: val, pointsValue: val, difficulty: val, phase: 'category_select',
             })} />
-          : <Waiting text="En attente du lancer de dé..." />}
+          : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
     );
   }
@@ -68,10 +70,10 @@ export default function MotInterdit() {
   if (mg.phase === 'category_select') {
     return (
       <div className="page page-minigame">
-        <MgHeader title="Mot Interdit" subtitle={`Difficulté ${mg.difficulty}/6`} />
+        <MgHeader title={tr("Mot Interdit")} subtitle={tr("Difficulté {0}/6", [mg.difficulty])} />
         {isTPlayer ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p className="label" style={{ textAlign: 'center' }}>Choisis une catégorie à faire deviner</p>
+            <p className="label" style={{ textAlign: 'center' }}>{tr("Choisis une catégorie à faire deviner")}</p>
             {myCategories.map(cat => (
               <button
                 key={cat}
@@ -81,12 +83,12 @@ export default function MotInterdit() {
                   if (selecting) return;
                   setSelecting(true);
                   updateMinigame({ category: cat, phase: 'word_reveal' });
-                  fetch('/api/taboo', {
+                  fetchContent('/api/taboo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ category: cat, difficulty: mg.diceValue }),
                   })
-                    .then(r => r.json())
+
                     .then(data => updateMinigame({
                       tabooWord: data.word ?? '?',
                       forbiddenWords: data.forbidden ?? [],
@@ -99,7 +101,7 @@ export default function MotInterdit() {
             ))}
           </div>
         ) : (
-          <Waiting text={`${tName} choisit une catégorie...`} />
+          <Waiting text={tr("{0} choisit une catégorie...", [tName])} />
         )}
       </div>
     );
@@ -109,20 +111,20 @@ export default function MotInterdit() {
   if (mg.phase === 'word_reveal') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Mot Interdit" subtitle={`${mg.diceValue} pt${mg.diceValue > 1 ? 's' : ''}`} />
+        <MgHeader title={tr("Mot Interdit")} subtitle={`${mg.diceValue} pt${mg.diceValue > 1 ? 's' : ''}`} />
         {isTPlayer ? (
           <>
             <div className="card" style={{ textAlign: 'center' }}>
-              <p className="label">Catégorie</p>
+              <p className="label">{tr("Catégorie")}</p>
               <p className="mg-category">{mg.category}</p>
-              <p className="label" style={{ marginTop: 12 }}>Mot à faire deviner</p>
+              <p className="label" style={{ marginTop: 12 }}>{tr("Mot à faire deviner")}</p>
               {!mg.tabooWord
                 ? <div className="spinner" style={{ margin: '8px auto' }} />
                 : <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.tabooWord}</p>}
 
               {mg.forbiddenWords?.length > 0 && (
                 <>
-                  <p className="label" style={{ marginTop: 14 }}>Mots interdits</p>
+                  <p className="label" style={{ marginTop: 14 }}>{tr("Mots interdits")}</p>
                   <div className="taboo-list">
                     {mg.forbiddenWords.map(w => <span key={w} className="taboo-chip">{w}</span>)}
                   </div>
@@ -131,24 +133,20 @@ export default function MotInterdit() {
 
               <hr style={{ margin: '16px 0', opacity: 0.15 }} />
               <p className="muted" style={{ fontSize: 13, textAlign: 'left', lineHeight: 1.6 }}>
-                📋 <strong>Règles :</strong> décris le mot à voix haute sans jamais prononcer le mot
-                lui-même ni aucun des mots interdits. Les autres tapent leurs réponses.
-                Le premier qui trouve marque autant de points que toi. <strong>90 secondes.</strong>
+                📋 <strong>{tr("Règles :")}</strong> {tr("décris le mot à voix haute sans jamais prononcer le mot lui-même ni aucun des mots interdits. Les autres tapent leurs réponses. Le premier qui trouve marque autant de points que toi.")} <strong>{tr("90 secondes.")}</strong>
               </p>
             </div>
             {mg.tabooWord && (
               <button
                 className="btn btn-success btn-large"
                 onClick={() => updateMinigame({ phase: 'playing', countdownStartedAt: Date.now() })}
-              >
-                C'est parti !
-              </button>
+              > {tr("C'est parti !")} </button>
             )}
           </>
         ) : (
           <div className="card" style={{ textAlign: 'center' }}>
             <p className="mg-category">{mg.category}</p>
-            <p className="muted" style={{ marginTop: 8 }}>{tName} prend connaissance du mot...</p>
+            <p className="muted" style={{ marginTop: 8 }}>{tName} {tr("prend connaissance du mot...")}</p>
           </div>
         )}
       </div>
@@ -161,13 +159,13 @@ export default function MotInterdit() {
       <div className="page page-minigame">
         <div className="pictionary-header">
           <MgHeader
-            title="Mot Interdit"
-            subtitle={isTPlayer ? mg.tabooWord : `${mg.category} — Devinez !`}
+            title={tr("Mot Interdit")}
+            subtitle={isTPlayer ? mg.tabooWord : tr("{0} — Devinez !", [mg.category])}
           />
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={ROUND_SECONDS}
-            onExpire={() => { if (isTPlayer) updateMinigame({ phase: 'complete' }); }}
+            onExpire={() => { if (isController) updateMinigame({ phase: 'complete' }); }}
           />
         </div>
 
@@ -180,7 +178,7 @@ export default function MotInterdit() {
         <div className="guess-feed" ref={feedRef}>
           {guesses.length === 0 && (
             <p className="muted" style={{ textAlign: 'center', padding: 12 }}>
-              {isTPlayer ? 'Décris le mot — les réponses arrivent ici.' : 'Tape ta réponse !'}
+              {isTPlayer ? tr("Décris le mot — les réponses arrivent ici.") : tr("Tape ta réponse !")}
             </p>
           )}
           {guesses.map(g => (
@@ -195,23 +193,19 @@ export default function MotInterdit() {
           <div className="guess-input-row">
             <input
               className="input"
-              placeholder="Ta réponse..."
+              placeholder={tr("Ta réponse...")}
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submitGuess()}
               autoFocus
               autoComplete="off"
             />
-            <button className="btn btn-primary" onClick={submitGuess} disabled={!draft.trim()}>
-              Envoyer
-            </button>
+            <button className="btn btn-primary" onClick={submitGuess} disabled={!draft.trim()}> {tr("Envoyer")} </button>
           </div>
         )}
 
         {isTPlayer && (
-          <button className="btn btn-ghost" onClick={() => updateMinigame({ phase: 'complete' })}>
-            Abandonner le mot
-          </button>
+          <button className="btn btn-ghost" onClick={() => updateMinigame({ phase: 'complete' })}> {tr("Abandonner le mot")} </button>
         )}
       </div>
     );
@@ -225,23 +219,20 @@ export default function MotInterdit() {
 
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Résultat" />
+        <MgHeader title={tr("Résultat")} />
         <div className="result-banner card">
           {finderName
             ? <>
-                <p className="result-winner">🏆 {finderName} a trouvé !</p>
+                <p className="result-winner">🏆 {finderName} {tr("a trouvé !")}</p>
                 <p className="muted">{finderName} +{points} pts · {tName} +{points} pts</p>
               </>
-            : <p className="result-winner">😬 Personne n'a trouvé !</p>}
-          <p className="muted" style={{ marginTop: 8 }}>
-            Le mot était : <strong>{mg.tabooWord}</strong>
+            : <p className="result-winner">{tr("😬 Personne n'a trouvé !")}</p>}
+          <p className="muted" style={{ marginTop: 8 }}> {tr("Le mot était :")} <strong>{mg.tabooWord}</strong>
           </p>
         </div>
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }

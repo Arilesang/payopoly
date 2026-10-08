@@ -20,7 +20,7 @@ export default function SlotMachineLetter({ targetLetter, onDone }) {
       }
     }, 70);
     return () => clearInterval(id);
-  }, [targetLetter]);
+  }, [targetLetter, onDone]);
 
   return (
     <div className="slot-machine">

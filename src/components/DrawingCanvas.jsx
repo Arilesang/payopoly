@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 import { useRef, useEffect, useState } from 'react';
 
 const COLORS = ['#1a1a1a', '#e74c3c', '#3498db', '#27ae60', '#f39c12', '#9b59b6'];
@@ -22,6 +23,7 @@ function drawStroke(ctx, canvas, stroke) {
 }
 
 export default function DrawingCanvas({ isDrawer, strokes, currentStroke, onStrokeComplete, onStrokeUpdate, onClear }) {
+  const tr = useText();
   const canvasRef        = useRef(null);
   const [color, setColor]     = useState(COLORS[0]);
   const [isEraser, setIsEraser] = useState(false);
@@ -59,7 +61,7 @@ export default function DrawingCanvas({ isDrawer, strokes, currentStroke, onStro
       });
     }
   }
-  redrawRef.current = redraw;
+  useEffect(() => { redrawRef.current = redraw; });
 
   useEffect(() => { strokesRef.current = strokes;              redrawRef.current(); }, [strokes]);
   useEffect(() => { currentStrokeRef.current = currentStroke; redrawRef.current(); }, [currentStroke]);
@@ -161,12 +163,10 @@ export default function DrawingCanvas({ isDrawer, strokes, currentStroke, onStro
             <button
               className={`color-btn eraser-btn${isEraser ? ' active' : ''}`}
               onClick={() => setIsEraser(true)}
-              title="Gomme"
+              title={tr("Gomme")}
             >⌫</button>
           </div>
-          <button className="btn btn-ghost btn-small" style={{ width: 'auto' }} onClick={onClear}>
-            Effacer
-          </button>
+          <button className="btn btn-ghost btn-small" style={{ width: 'auto' }} onClick={onClear}> {tr("Effacer")} </button>
         </div>
       )}
     </div>

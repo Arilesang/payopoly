@@ -1,0 +1,25 @@
+.demo-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  background: #243624;
+  border-bottom: 1px solid #f0c040;
+  font-size: 13px;
+}
+.demo-bar p { margin-bottom: 5px; }
+.demo-bar .demo-turn { color: #bfcec2; }
+.demo-bar div { display: flex; gap: 8px; }
+.demo-bar button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #8cac98;
+  border-radius: 6px;
+  background: #163320;
+  color: #f0ede8;
+  font: inherit;
+  cursor: pointer;
+}
+.demo-bar .demo-switch { background: #f0c040; border-color: #f0c040; color: #0b2215; }

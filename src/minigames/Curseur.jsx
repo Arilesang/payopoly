@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // ALL (mêlée) — Le Curseur
 // A category becomes a spectrum. The turn player sees a hidden point on it and
 // gives a one-word clue; everyone else drags a slider to guess where.
@@ -16,12 +17,13 @@ const NEAR_BAND     = 20;  // within this → half, rounded up
 
 function payoutFor(distance, points) {
   if (distance <= CLOSE_BAND) return points;
-  if (distance <= NEAR_BAND)  return Math.ceil(points / 2);
+  if (distance <= NEAR_BAND)  return points / 2;
   return 0;
 }
 
 export default function Curseur() {
-  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame, getLobbyPool } = useGame();
+  const tr = useText();
+  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame, getLobbyPool,  isController, fetchContent,} = useGame();
 
   const mg        = game?.currentMinigame;
   const players   = game?.players ?? {};
@@ -64,11 +66,11 @@ export default function Curseur() {
 
   // ── TPlayer: everyone guessed → score ──────────────────────────────────
   useEffect(() => {
-    if (mg?.phase !== 'guessing' || !isTPlayer) return;
+    if (mg?.phase !== 'guessing' || !isController) return;
     if (Object.keys(guesses).length < guesserIds.length) return;
     score();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.guesses, mg?.phase]);
+  }, [mg?.guesses, mg?.phase, isController]);
 
   if (!mg) return <div className="page page-center"><div className="spinner" /></div>;
 
@@ -76,7 +78,7 @@ export default function Curseur() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Le Curseur" subtitle={tName} />
+        <MgHeader title={tr("Le Curseur")} subtitle={tName} />
         {isTPlayer
           ? <DiceRoll onResult={val => {
               const cat = shuffle(getLobbyPool())[0] ?? 'Général';
@@ -85,18 +87,18 @@ export default function Curseur() {
               updateMinigame({
                 diceValue: val, pointsValue: val, category: cat, target, phase: 'clue',
               });
-              fetch('/api/spectrum', {
+              fetchContent('/api/spectrum', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category: cat }),
               })
-                .then(r => r.json())
+
                 .then(data => updateMinigame({
                   spectrum: { left: data.left ?? 'peu', right: data.right ?? 'beaucoup' },
                 }))
                 .catch(() => updateMinigame({ spectrum: { left: 'peu', right: 'beaucoup' } }));
             }} />
-          : <Waiting text="En attente du lancer de dé..." />}
+          : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
     );
   }
@@ -106,23 +108,21 @@ export default function Curseur() {
     if (!mg.spectrum) {
       return (
         <div className="page page-minigame page-center">
-          <MgHeader title="Le Curseur" subtitle={mg.category} />
+          <MgHeader title={tr("Le Curseur")} subtitle={mg.category} />
           <div className="spinner" />
-          <Waiting text="Génération du spectre..." />
+          <Waiting text={tr("Génération du spectre...")} />
         </div>
       );
     }
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Le Curseur" subtitle={mg.category} />
+        <MgHeader title={tr("Le Curseur")} subtitle={mg.category} />
 
         {isTPlayer ? (
           <>
             <div className="card">
-              <p className="label" style={{ textAlign: 'center' }}>
-                Ta cible — personne d'autre ne la voit
-              </p>
+              <p className="label" style={{ textAlign: 'center' }}> {tr("Ta cible — personne d'autre ne la voit")} </p>
               <SpectrumSlider
                 left={mg.spectrum.left}
                 right={mg.spectrum.right}
@@ -131,13 +131,10 @@ export default function Curseur() {
               />
             </div>
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p className="muted" style={{ fontSize: 13 }}>
-                Donne <strong>un seul mot</strong> qui se place exactement là sur ce spectre.
-                Plus les autres tombent près, plus tu marques.
-              </p>
+              <p className="muted" style={{ fontSize: 13 }}> {tr("Donne")} <strong>{tr("un seul mot")}</strong> {tr("qui se place exactement là sur ce spectre. Plus les autres tombent près, plus tu marques.")} </p>
               <input
                 className="input"
-                placeholder="Ton indice (un mot)"
+                placeholder={tr("Ton indice (un mot)")}
                 value={clueDraft}
                 onChange={e => setClueDraft(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && clueDraft.trim() && updateMinigame({
@@ -153,9 +150,7 @@ export default function Curseur() {
                   clue: clueDraft.trim(), phase: 'guessing', countdownStartedAt: Date.now(),
                 })}
                 disabled={!clueDraft.trim()}
-              >
-                Donner l'indice
-              </button>
+              > {tr("Donner l'indice")} </button>
             </div>
           </>
         ) : (
@@ -163,7 +158,7 @@ export default function Curseur() {
             <div className="card">
               <SpectrumSlider left={mg.spectrum.left} right={mg.spectrum.right} value={50} />
             </div>
-            <Waiting text={`${tName} cherche son indice...`} />
+            <Waiting text={tr("{0} cherche son indice...", [tName])} />
           </>
         )}
       </div>
@@ -177,18 +172,18 @@ export default function Curseur() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Le Curseur" subtitle={mg.category} />
+        <MgHeader title={tr("Le Curseur")} subtitle={mg.category} />
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={GUESS_SECONDS}
-            onExpire={() => { if (isTPlayer) score(); }}
+            onExpire={() => { if (isController) score(); }}
           />
         </div>
 
         <div className="card" style={{ textAlign: 'center' }}>
-          <p className="label">L'indice de {tName}</p>
+          <p className="label">{tr("L'indice de")} {tName}</p>
           <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.clue}</p>
         </div>
 
@@ -204,14 +199,13 @@ export default function Curseur() {
         </div>
 
         {!isTPlayer && submitted === undefined && (
-          <button className="btn btn-success btn-large" onClick={() => setMyEntry('guesses', myGuess)}>
-            Valider — {myGuess}
+          <button className="btn btn-success btn-large" onClick={() => setMyEntry('guesses', myGuess)}> {tr("Valider —")} {myGuess}
           </button>
         )}
-        {submitted !== undefined && <Waiting text="Réponse enregistrée. En attente des autres..." />}
-        {isTPlayer && <Waiting text="Tu ne joues pas ce tour — tu as donné l'indice." />}
+        {submitted !== undefined && <Waiting text={tr("Réponse enregistrée. En attente des autres...")} />}
+        {isTPlayer && <Waiting text={tr("Tu ne joues pas ce tour — tu as donné l'indice.")} />}
 
-        <TallyLine done={done} total={guesserIds.length} label="ont placé leur curseur" />
+        <TallyLine done={done} total={guesserIds.length} label={tr("ont placé leur curseur")} />
       </div>
     );
   }
@@ -226,7 +220,7 @@ export default function Curseur() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Résultats" subtitle={`Indice : ${mg.clue}`} />
+        <MgHeader title={tr("Résultats")} subtitle={tr("Indice : {0}", [mg.clue])} />
 
         <div className="card">
           <SpectrumSlider
@@ -236,8 +230,7 @@ export default function Curseur() {
             pins={pins}
             value={mg.target}
           />
-          <p className="muted" style={{ textAlign: 'center', marginTop: 28, fontSize: 13 }}>
-            La cible était à <strong>{mg.target}</strong>
+          <p className="muted" style={{ textAlign: 'center', marginTop: 28, fontSize: 13 }}> {tr("La cible était à")} <strong>{mg.target}</strong>
           </p>
         </div>
 
@@ -247,9 +240,9 @@ export default function Curseur() {
             const d = detail[id] ?? {};
             return (
               <div key={id} className="mg-row">
-                <span>{players[id]?.name}{d.isClue ? ' (indice)' : ''}</span>
+                <span>{players[id]?.name}{d.isClue ? tr(" (indice)") : ''}</span>
                 <span className="muted" style={{ fontSize: 13 }}>
-                  {d.distance === null || d.distance === undefined ? '—' : `à ${d.distance}`}
+                  {d.distance === null || d.distance === undefined ? '—' : tr("à {0}", [d.distance])}
                 </span>
                 <strong>+{awards[id] ?? 0}</strong>
               </div>
@@ -257,11 +250,9 @@ export default function Curseur() {
           })}
         </div>
 
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }

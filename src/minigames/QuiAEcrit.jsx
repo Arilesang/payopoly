@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // ALL (mêlée) — Qui a écrit ça ?
 // Everyone answers the same prompt, then everyone tries to match each answer
 // back to its author.
@@ -16,7 +17,8 @@ const ATTRIB_SECONDS  = 60;
 const MAX_ON_SHOW     = 6;
 
 export default function QuiAEcrit() {
-  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame, getLobbyPool } = useGame();
+  const tr = useText();
+  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame, getLobbyPool,  isController, fetchContent,} = useGame();
 
   const mg        = game?.currentMinigame;
   const players   = game?.players ?? {};
@@ -32,19 +34,19 @@ export default function QuiAEcrit() {
 
   // ── TPlayer: everyone wrote (or time up) → put answers up for guessing ──
   useEffect(() => {
-    if (mg?.phase !== 'writing' || !isTPlayer) return;
+    if (mg?.phase !== 'writing' || !isController) return;
     if (Object.keys(submissions).length < playerIds.length) return;
     openAttributing();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.submissions, mg?.phase]);
+  }, [mg?.submissions, mg?.phase, isController]);
 
   // ── TPlayer: everyone attributed → score ───────────────────────────────
   useEffect(() => {
-    if (mg?.phase !== 'attributing' || !isTPlayer) return;
+    if (mg?.phase !== 'attributing' || !isController) return;
     if (Object.keys(attributions).length < playerIds.length) return;
     score();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.attributions, mg?.phase]);
+  }, [mg?.attributions, mg?.phase, isController]);
 
   function openAttributing() {
     const written = Object.entries(submissions)
@@ -105,7 +107,7 @@ export default function QuiAEcrit() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Qui a écrit ça ?" subtitle="Tout le monde joue !" />
+        <MgHeader title={tr("Qui a écrit ça ?")} subtitle={tr("Tout le monde joue !")} />
         {isTPlayer
           ? <DiceRoll onResult={val => {
               const cat = shuffle(getLobbyPool())[0] ?? 'Général';
@@ -113,16 +115,16 @@ export default function QuiAEcrit() {
                 diceValue: val, pointsValue: val, category: cat,
                 phase: 'writing', countdownStartedAt: Date.now(),
               });
-              fetch('/api/prompt', {
+              fetchContent('/api/prompt', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category: cat }),
               })
-                .then(r => r.json())
+
                 .then(data => updateMinigame({ promptText: data.prompt ?? `${cat} : raconte.` }))
                 .catch(() => updateMinigame({ promptText: `${cat} : décris ça en trois mots.` }));
             }} />
-          : <Waiting text="En attente du lancer de dé..." />}
+          : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
     );
   }
@@ -135,22 +137,22 @@ export default function QuiAEcrit() {
     if (!mg.promptText) {
       return (
         <div className="page page-minigame page-center">
-          <MgHeader title="Qui a écrit ça ?" subtitle={mg.category} />
+          <MgHeader title={tr("Qui a écrit ça ?")} subtitle={mg.category} />
           <div className="spinner" />
-          <Waiting text="Génération de la question..." />
+          <Waiting text={tr("Génération de la question...")} />
         </div>
       );
     }
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Qui a écrit ça ?" subtitle={mg.category} />
+        <MgHeader title={tr("Qui a écrit ça ?")} subtitle={mg.category} />
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={WRITE_SECONDS}
-            onExpire={() => { if (isTPlayer) openAttributing(); }}
+            onExpire={() => { if (isController) openAttributing(); }}
           />
         </div>
 
@@ -161,12 +163,10 @@ export default function QuiAEcrit() {
 
         {!mine ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p className="muted" style={{ fontSize: 13 }}>
-              Écris ta réponse. Les autres devront deviner que c'est toi.
-            </p>
+            <p className="muted" style={{ fontSize: 13 }}> {tr("Écris ta réponse. Les autres devront deviner que c'est toi.")} </p>
             <input
               className="input"
-              placeholder="Ta réponse..."
+              placeholder={tr("Ta réponse...")}
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && draft.trim() && setMyEntry('submissions', draft.trim())}
@@ -178,15 +178,13 @@ export default function QuiAEcrit() {
               className="btn btn-success"
               onClick={() => setMyEntry('submissions', draft.trim())}
               disabled={!draft.trim()}
-            >
-              Envoyer
-            </button>
+            > {tr("Envoyer")} </button>
           </div>
         ) : (
-          <Waiting text="Réponse envoyée. En attente des autres..." />
+          <Waiting text={tr("Réponse envoyée. En attente des autres...")} />
         )}
 
-        <TallyLine done={done} total={playerIds.length} label="ont répondu" />
+        <TallyLine done={done} total={playerIds.length} label={tr("ont répondu")} />
       </div>
     );
   }
@@ -201,13 +199,13 @@ export default function QuiAEcrit() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Qui a écrit ça ?" subtitle="Attribue chaque réponse" />
+        <MgHeader title={tr("Qui a écrit ça ?")} subtitle={tr("Attribue chaque réponse")} />
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={ATTRIB_SECONDS}
-            onExpire={() => { if (isTPlayer) score(); }}
+            onExpire={() => { if (isController) score(); }}
           />
         </div>
 
@@ -216,7 +214,7 @@ export default function QuiAEcrit() {
         </div>
 
         {mySubmitted ? (
-          <Waiting text="Réponses envoyées. En attente des autres..." />
+          <Waiting text={tr("Réponses envoyées. En attente des autres...")} />
         ) : (
           <>
             {toGuess.map(opt => (
@@ -240,12 +238,12 @@ export default function QuiAEcrit() {
               onClick={() => setMyEntry('attributions', assign)}
               disabled={!allAssigned}
             >
-              {allAssigned ? 'Valider mes réponses' : 'Attribue toutes les réponses'}
+              {allAssigned ? tr("Valider mes réponses") : tr("Attribue toutes les réponses")}
             </button>
           </>
         )}
 
-        <TallyLine done={done} total={playerIds.length} label="ont attribué" />
+        <TallyLine done={done} total={playerIds.length} label={tr("ont attribué")} />
       </div>
     );
   }
@@ -257,10 +255,10 @@ export default function QuiAEcrit() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Résultats" />
+        <MgHeader title={tr("Résultats")} />
 
         <div className="card">
-          <p className="label">Les réponses</p>
+          <p className="label">{tr("Les réponses")}</p>
           {options.map(opt => (
             <div key={opt.id} className="bluff-row">
               <div className="bluff-row-head">
@@ -269,8 +267,8 @@ export default function QuiAEcrit() {
               </div>
               <p className="muted" style={{ fontSize: 13 }}>
                 {(detail[opt.authorId]?.unmasked ?? 0) === 0
-                  ? 'Personne ne l\'a démasqué'
-                  : `Démasqué par ${detail[opt.authorId].unmasked} joueur${detail[opt.authorId].unmasked > 1 ? 's' : ''}`}
+                  ? tr("Personne ne l'a démasqué")
+                  : tr("Démasqué par {0} joueur{1}", [detail[opt.authorId].unmasked, detail[opt.authorId].unmasked > 1 ? 's' : ''])}
               </p>
             </div>
           ))}
@@ -293,11 +291,9 @@ export default function QuiAEcrit() {
           })}
         </div>
 
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }

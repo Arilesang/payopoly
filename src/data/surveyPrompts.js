@@ -66,6 +66,30 @@ export const SURVEY_PROMPTS = [
   'garder la même coiffure toute sa vie',
 ];
 
-export function randomSurveyPrompt() {
-  return SURVEY_PROMPTS[Math.floor(Math.random() * SURVEY_PROMPTS.length)];
+export function randomSurveyPrompt(language = 'fr') {
+  const prompts = language === 'en' ? ENGLISH_PROMPTS : SURVEY_PROMPTS;
+  return prompts[Math.floor(Math.random() * prompts.length)];
 }
+
+const ENGLISH_PROMPTS = [
+  'miss their flight', 'forget their own birthday', 'become famous for something ridiculous',
+  'survive longest on a desert island', 'talk to a stranger on the subway', 'get lost in their own neighborhood',
+  'cry at an advertisement', 'order the same meal forever', 'win the lottery and spend it all in a week',
+  'adopt seven cats', 'reply to a message three weeks later', 'sing loudly in the car',
+  'injure themselves dancing', 'become mayor', 'read all the terms and conditions',
+  'forget someone’s name mid-conversation', 'join a strange club', 'spoil a film without warning',
+  'keep a receipt for ten years', 'pretend to know a band', 'arrive late at their own wedding',
+  'learn a rare language for fun', 'load the dishwasher the wrong way', 'chat with the waiter for twenty minutes',
+  'fall in love on holiday', 'forget where they parked', 'become vegetarian then change their mind',
+  'write a book without finishing it', 'argue with an inanimate object', 'wash dishes at three in the morning',
+  'give their child a strange name', 'have three helpings of dessert', 'leave home in pajamas',
+  'forget to pay a bill for six months', 'get hooked on a show they dislike', 'laugh at the wrong moment',
+  'bring a stray animal home', 'get lost in the mountains', 'wear the same sweater five days in a row',
+  'call instead of texting', 'plan every minute of a holiday', 'completely forget an appointment',
+  'become an influencer by accident', 'get on the karaoke stage without hesitation', 'keep a secret for twenty years',
+  'immediately spill a secret', 'voluntarily wake up at five', 'sleep until noon every day',
+  'build furniture without reading instructions', 'take the wrong train', 'trip on flat ground',
+  'become champion of a strange sport', 'talk to themselves in the street', 'lock their keys inside',
+  'reply to work email at midnight', 'convince everyone to follow their plan', 'lose their phone at a party',
+  'know every neighbor’s name', 'move abroad on impulse', 'keep the same haircut forever',
+];

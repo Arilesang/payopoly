@@ -1,3 +1,4 @@
+import { now } from './lib/clock.js';
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
 // Fisher-Yates — unbiased, unlike sort(() => Math.random() - 0.5)
@@ -85,19 +86,10 @@ export function matchesAny(word, pool, maxDistance = 1) {
   });
 }
 
-// Votes are settled once everyone has voted, the deadline has passed with at
-// least one vote in, or no outstanding vote could change the leader.
+// Waiting for all votes preserves unanimity bonuses as well as the winner.
 export function votesSettled(votes, voterIds, deadline) {
   const cast = Object.keys(votes ?? {}).length;
-  if (cast >= voterIds.length) return true;
-  if (cast > 0 && deadline && Date.now() >= deadline) return true;
-  if (cast === 0) return false;
-
-  const tally = {};
-  Object.values(votes).forEach(v => { tally[v] = (tally[v] ?? 0) + 1; });
-  const counts = Object.values(tally).sort((a, b) => b - a);
-  const remaining = voterIds.length - cast;
-  return counts[0] > (counts[1] ?? 0) + remaining;
+  return cast >= voterIds.length || Boolean(deadline && now() >= deadline);
 }
 
 export function tallyVotes(votes) {
@@ -108,5 +100,5 @@ export function tallyVotes(votes) {
 
 export function topVote(votes) {
   const entries = Object.entries(tallyVotes(votes)).sort((a, b) => b[1] - a[1]);
-  return entries[0]?.[0] ?? null;
+  return entries.length && (entries.length === 1 || entries[0][1] > entries[1][1]) ? entries[0][0] : null;
 }

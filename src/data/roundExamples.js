@@ -1,0 +1,17 @@
+export const ROUND_EXAMPLES = {
+  'solo:Petit Bac': ['Lettre B, catégorie Animaux → Baleine.', 'Letter B, Animals → Bear.'],
+  'duel:Petit Bac': ['Lettre B, catégorie Animaux → Baleine.', 'Letter B, Animals → Bear.'],
+  'solo:Mot Melangés': ['OTBOR → ROBOT.', 'OTBOR → ROBOT.'],
+  'duel:Trivia': ['Mars est la planète rouge. Choisis Mars.', 'Mars is the Red Planet. Choose Mars.'],
+  'all:Trivia': ['Mars est la planète rouge. Choisis Mars.', 'Mars is the Red Planet. Choose Mars.'],
+  'all:Mimes': ['Pour « robot », mime des mouvements mécaniques.', 'For “robot”, act out mechanical movements.'],
+  'all:Pictionary': ['Pour « vélo », commence par deux roues.', 'For “bicycle”, start with two wheels.'],
+  'all:Mot Interdit': ['Décris « parapluie » sans dire « pluie ».', 'Describe “umbrella” without saying “rain”.'],
+  'duel:Punchline': ['« Mon robot ne sait que ___ » → « faire la sieste ».', '“My robot can only ___” → “take naps”.'],
+  'duel:Rimes Rapides': ['Château → bateau → gâteau.', 'Light → night → bright.'],
+  'all:Bluff': ['La vraie réponse est cachée parmi les mensonges. Invente un leurre crédible.', 'The truth is hidden among the lies. Invent a believable decoy.'],
+  'all:Le Curseur': ['Spectre froid → chaud : « soleil » suggère une position vers chaud.', 'Cold → hot spectrum: “sun” suggests a position toward hot.'],
+  'all:Sondage Éclair': ['Choisis quelqu’un, puis prédis le choix du groupe.', 'Choose someone, then predict the group’s choice.'],
+  'all:Qui a écrit ça': ['« Chaussettes à pois » : qui a écrit cette réponse ?', '“Polka-dot socks”: who wrote that answer?'],
+  'all:Croquis Croisés': ['Un dessin de vélo peut être présenté avec « lunettes géantes » comme faux titre.', 'A bicycle drawing might have “giant glasses” as a fake title.'],
+};

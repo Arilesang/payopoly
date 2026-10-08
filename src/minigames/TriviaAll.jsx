@@ -1,77 +1,73 @@
+import { useText } from '../context/useText';
+import { triviaResult } from '../lib/session';
+import Countdown from '../components/Countdown';
 // ALL — Trivia (AI-generated MCQ, everyone plays simultaneously)
 // Phases: dice → category_select → ready_check → playing → results
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 
 export default function TriviaAll() {
-  const { game, myPlayerId, isTPlayer, updateMinigame, setMinigameReady, submitTriviaAnswer, completeMinigame } = useGame();
+  const tr = useText();
+  const { game, myPlayerId, isTPlayer, updateMinigame, setMinigameReady, submitTriviaAnswer, completeMinigame,  isController, fetchContent,} = useGame();
   const mg      = game?.currentMinigame;
   const players = game?.players ?? {};
-  const [loadingAI, setLoadingAI] = useState(false);
-  const [currentQ, setCurrentQ]   = useState(0);
+  const loadingAI = Boolean(mg?.loadingContent);
+  const setLoadingAI = value => updateMinigame({ loadingContent: value });
+  const persistedAnswers = Object.values(mg?.triviaAnswers?.[myPlayerId] ?? {});
+  const questionCount = mg?.triviaQuestions?.length ?? 3;
+  const currentQ = Math.min(questionCount - 1, persistedAnswers.length);
 
   const playerIds  = Object.keys(players);
   const tName      = players[mg?.tPlayerId]?.name;
   const qs         = mg?.triviaQuestions ?? [];
-  const myAnswers  = mg?.triviaAnswers?.[myPlayerId] ?? [];
+  const myAnswers  = Object.values(mg?.triviaAnswers?.[myPlayerId] ?? {});
   const allDone    = myAnswers.length >= qs.length;
 
   // ── TPlayer: fetch trivia once ALL players are ready ──────────────────
   useEffect(() => {
-    if (mg?.phase !== 'ready_check' || !isTPlayer) return;
+    if (mg?.phase !== 'ready_check' || !isController) return;
     const allReady = playerIds.every(id => mg.readyPlayers?.[id]);
-    if (!allReady || mg.triviaQuestions || loadingAI) return;
+    if (!allReady || mg.triviaQuestions) return;
     setLoadingAI(true);
-    fetch('/api/trivia', {
+    fetchContent('/api/trivia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category: mg.category, difficulty: mg.difficulty }),
     })
-      .then(r => r.json())
+
       .then(data => updateMinigame({ triviaQuestions: data.questions }))
       .catch(err => console.error('Trivia API error', err))
       .finally(() => setLoadingAI(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.readyPlayers, mg?.phase]);
+  }, [mg?.readyPlayers, mg?.phase, isController]);
 
   // ── TPlayer: advance to playing once questions are fetched ────────────
   useEffect(() => {
-    if (mg?.phase !== 'ready_check' || !isTPlayer || !mg.triviaQuestions) return;
+    if (mg?.phase !== 'ready_check' || !isController || !mg.triviaQuestions) return;
     const allReady = playerIds.every(id => mg.readyPlayers?.[id]);
     if (!allReady) return;
     updateMinigame({ phase: 'playing' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.triviaQuestions]);
+  }, [mg?.triviaQuestions, isController]);
 
   // ── TPlayer: compute results when ALL players have answered ───────────
   useEffect(() => {
-    if (mg?.phase !== 'playing' || !isTPlayer || !mg.triviaQuestions) return;
+    if (mg?.phase !== 'playing' || !isController || !mg.triviaQuestions) return;
     const everyoneDone = playerIds.every(id =>
-      (mg.triviaAnswers?.[id] ?? []).length >= mg.triviaQuestions.length
+      (Object.values(mg.triviaAnswers?.[id] ?? {})).length >= mg.triviaQuestions.length
     );
     if (!everyoneDone) return;
 
-    const results = playerIds.map(id => {
-      const answers = mg.triviaAnswers?.[id] ?? [];
-      const score   = mg.triviaQuestions.reduce((acc, q, i) => {
-        const ans = answers.find(a => a.questionIndex === i);
-        return acc + (ans?.answerIndex === q.answer ? 1 : 0);
-      }, 0);
-      const time = answers.reduce((sum, a) => sum + a.timestamp, 0);
-      return { id, score, time };
-    });
-    results.sort((a, b) => b.score - a.score || a.time - b.time);
-    const scores = Object.fromEntries(results.map(r => [r.id, r.score]));
+    updateMinigame({ ...triviaResult(mg, playerIds), phase: 'results' });
 
-    updateMinigame({ phase: 'results', winnerId: results[0].id, scores });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.triviaAnswers, mg?.phase]);
+  }, [mg?.triviaAnswers, mg?.phase, isController]);
 
   async function handleAnswer(answerIndex) {
     if (myAnswers.find(a => a.questionIndex === currentQ)) return;
     await submitTriviaAnswer(currentQ, answerIndex);
-    if (currentQ < qs.length - 1) setCurrentQ(q => q + 1);
+
   }
 
   if (!mg) return <div className="page page-center"><div className="spinner" /></div>;
@@ -80,10 +76,10 @@ export default function TriviaAll() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Trivia" subtitle="Tout le monde joue !" />
+        <MgHeader title="Trivia" subtitle={tr("Tout le monde joue !")} />
         {isTPlayer
           ? <DiceRoll onResult={val => updateMinigame({ diceValue: val, pointsValue: val, difficulty: val, phase: 'category_select' })} />
-          : <p className="muted" style={{ textAlign: 'center' }}>En attente du lancer de dé...</p>}
+          : <p className="muted" style={{ textAlign: 'center' }}>{tr("En attente du lancer de dé...")}</p>}
       </div>
     );
   }
@@ -93,10 +89,10 @@ export default function TriviaAll() {
     const myCategories = players[mg.tPlayerId]?.categories ?? [];
     return (
       <div className="page page-minigame">
-        <MgHeader title="Trivia" subtitle={`Difficulté ${mg.difficulty}/6`} />
+        <MgHeader title="Trivia" subtitle={tr("Difficulté {0}/6", [mg.difficulty])} />
         {isTPlayer ? (
           <>
-            <p className="label" style={{ paddingLeft: 4 }}>Choisis une catégorie</p>
+            <p className="label" style={{ paddingLeft: 4 }}>{tr("Choisis une catégorie")}</p>
             <div className="category-select-list">
               {myCategories.map((cat, i) => (
                 <button key={i} className="btn btn-category"
@@ -108,8 +104,7 @@ export default function TriviaAll() {
           </>
         ) : (
           <p className="muted" style={{ textAlign: 'center', marginTop: 40 }}>
-            {tName} choisit une catégorie...
-          </p>
+            {tName} {tr("choisit une catégorie...")} </p>
         )}
       </div>
     );
@@ -123,15 +118,15 @@ export default function TriviaAll() {
       <div className="page page-minigame page-center">
         <MgHeader title="Trivia" subtitle={mg.category} />
         <div className="card" style={{ textAlign: 'center' }}>
-          <p>Difficulté : <strong>{mg.difficulty}/6</strong></p>
-          <p className="muted">{readyCount}/{playerIds.length} prêts</p>
+          <p>{tr("Difficulté :")} <strong>{mg.difficulty}/6</strong></p>
+          <p className="muted">{readyCount}/{playerIds.length} {tr("prêts")}</p>
         </div>
         {!myReady && (
-          <button className="btn btn-success btn-large" onClick={setMinigameReady}>Prêt !</button>
+          <button className="btn btn-success btn-large" onClick={setMinigameReady}>{tr("Prêt !")}</button>
         )}
         {myReady && (
           <p className="muted" style={{ textAlign: 'center' }}>
-            {loadingAI ? '⏳ Génération des questions...' : 'En attente des autres joueurs...'}
+            {loadingAI ? tr("⏳ Génération des questions...") : tr("En attente des autres joueurs...")}
           </p>
         )}
       </div>
@@ -142,13 +137,14 @@ export default function TriviaAll() {
   if (mg.phase === 'playing') {
     const q             = qs[currentQ];
     const myAns         = myAnswers.find(a => a.questionIndex === currentQ);
-    const finishedCount = playerIds.filter(id => (mg.triviaAnswers?.[id] ?? []).length >= qs.length).length;
+    const finishedCount = playerIds.filter(id => (Object.values(mg.triviaAnswers?.[id] ?? {})).length >= qs.length).length;
 
     if (!q) return <div className="page page-center"><div className="spinner" /></div>;
 
     return (
       <div className="page page-minigame">
         <MgHeader title="Trivia" subtitle={`Q${currentQ + 1}/${qs.length}`} />
+        <Countdown startedAt={mg.countdownStartedAt} total={60} />
         <div className="card trivia-question">
           <p className="trivia-q-text">{q.q}</p>
         </div>
@@ -166,9 +162,7 @@ export default function TriviaAll() {
           </div>
         )}
         {allDone && (
-          <p className="muted" style={{ textAlign: 'center' }}>
-            En attente... ({finishedCount}/{playerIds.length} terminés)
-          </p>
+          <p className="muted" style={{ textAlign: 'center' }}> {tr("En attente... (")}{finishedCount}/{playerIds.length} {tr("terminés)")} </p>
         )}
       </div>
     );
@@ -180,10 +174,10 @@ export default function TriviaAll() {
     const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Résultats" />
+        <MgHeader title={tr("Résultats")} />
         <div className="result-banner card">
-          <p className="result-winner">🏆 {players[mg.winnerId]?.name}</p>
-          <p className="muted">+{mg.diceValue} points</p>
+          <p className="result-winner">{mg.winnerId ? `🏆 ${players[mg.winnerId]?.name}` : mg.winnerIds?.length > 1 ? tr('Égalité') : tr('Aucune bonne réponse')}</p>
+          <p className="muted">{mg.winnerId || mg.winnerIds?.length ? `+${mg.diceValue} ${tr('points')}` : `0 ${tr('points')}`}</p>
         </div>
         <div className="card" style={{ width: '100%' }}>
           {sorted.map(([id, score], i) => (
@@ -196,10 +190,9 @@ export default function TriviaAll() {
             </div>
           ))}
         </div>
-        {isTPlayer && (
-          <button className="btn btn-large btn-primary" onClick={() => completeMinigame(mg.winnerId)}>
-            Continuer
-          </button>
+        <div className="card">{(mg.triviaQuestions ?? []).map((q, i) => <p key={i}><strong>{q.q}</strong><br />{q.options[q.answer]}</p>)}</div>
+        {isController && (
+          <button className="btn btn-large btn-primary" onClick={() => completeMinigame(mg.winnerId)}> {tr("Continuer")} </button>
         )}
       </div>
     );
