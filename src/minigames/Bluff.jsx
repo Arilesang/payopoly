@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // ALL (mêlée) — Bluff
 // A true statement with the answer cut out. Everyone writes a fake, then
 // everyone hunts for the truth among the lies.
@@ -43,7 +44,8 @@ function buildOptions(submissions, trueAnswer) {
 }
 
 export default function Bluff() {
-  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame } = useGame();
+  const tr = useText();
+  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame,  isController, fetchContent,} = useGame();
 
   const mg        = game?.currentMinigame;
   const players   = game?.players ?? {};
@@ -63,19 +65,19 @@ export default function Bluff() {
 
   // ── TPlayer: all fakes in (or time up) → build the pick list ────────────
   useEffect(() => {
-    if (mg?.phase !== 'writing' || !isTPlayer || !mg.trueAnswer) return;
+    if (mg?.phase !== 'writing' || !isController || !mg.trueAnswer) return;
     if (Object.keys(submissions).length < playerIds.length) return;
     openPicking();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.submissions, mg?.phase]);
+  }, [mg?.submissions, mg?.phase, isController]);
 
   // ── TPlayer: everyone picked → score ───────────────────────────────────
   useEffect(() => {
-    if (mg?.phase !== 'picking' || !isTPlayer) return;
+    if (mg?.phase !== 'picking' || !isController) return;
     if (Object.keys(picks).length < pickerIds.length) return;
     score();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.picks, mg?.phase]);
+  }, [mg?.picks, mg?.phase, isController]);
 
   function openPicking() {
     const { options: opts, truthMatchers: matchers } = buildOptions(submissions, mg.trueAnswer);
@@ -129,12 +131,12 @@ export default function Bluff() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Bluff" subtitle="Tout le monde ment !" />
+        <MgHeader title="Bluff" subtitle={tr("Tout le monde ment !")} />
         {isTPlayer
           ? <DiceRoll onResult={val => updateMinigame({
               diceValue: val, pointsValue: val, difficulty: val, phase: 'category_select',
             })} />
-          : <Waiting text="En attente du lancer de dé..." />}
+          : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
     );
   }
@@ -143,10 +145,10 @@ export default function Bluff() {
   if (mg.phase === 'category_select') {
     return (
       <div className="page page-minigame">
-        <MgHeader title="Bluff" subtitle={`Difficulté ${mg.difficulty}/6`} />
+        <MgHeader title="Bluff" subtitle={tr("Difficulté {0}/6", [mg.difficulty])} />
         {isTPlayer ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p className="label" style={{ textAlign: 'center' }}>Choisis une catégorie</p>
+            <p className="label" style={{ textAlign: 'center' }}>{tr("Choisis une catégorie")}</p>
             {myCategories.map(cat => (
               <button
                 key={cat}
@@ -158,12 +160,12 @@ export default function Bluff() {
                   updateMinigame({
                     category: cat, phase: 'writing', countdownStartedAt: Date.now(),
                   });
-                  fetch('/api/bluff', {
+                  fetchContent('/api/bluff', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ category: cat, difficulty: mg.diceValue }),
                   })
-                    .then(r => r.json())
+
                     .then(data => updateMinigame({
                       promptText: data.prompt ?? '___',
                       trueAnswer: data.answer ?? '?',
@@ -178,7 +180,7 @@ export default function Bluff() {
             ))}
           </div>
         ) : (
-          <Waiting text={`${tName} choisit une catégorie...`} />
+          <Waiting text={tr("{0} choisit une catégorie...", [tName])} />
         )}
       </div>
     );
@@ -194,36 +196,34 @@ export default function Bluff() {
         <div className="page page-minigame page-center">
           <MgHeader title="Bluff" subtitle={mg.category} />
           <div className="spinner" />
-          <Waiting text="Génération de l'affirmation..." />
+          <Waiting text={tr("Génération de l'affirmation...")} />
         </div>
       );
     }
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Bluff" subtitle="Invente une fausse réponse" />
+        <MgHeader title="Bluff" subtitle={tr("Invente une fausse réponse")} />
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={WRITE_SECONDS}
-            onExpire={() => { if (isTPlayer) openPicking(); }}
+            onExpire={() => { if (isController) openPicking(); }}
           />
         </div>
 
         <div className="card" style={{ textAlign: 'center' }}>
-          <p className="label">Affirmation</p>
+          <p className="label">{tr("Affirmation")}</p>
           <p className="prompt-text">{mg.promptText}</p>
         </div>
 
         {!mine ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p className="muted" style={{ fontSize: 13 }}>
-              Écris une réponse crédible mais fausse. Si quelqu'un y croit, tu marques.
-            </p>
+            <p className="muted" style={{ fontSize: 13 }}> {tr("Écris une réponse crédible mais fausse. Si quelqu'un y croit, tu marques.")} </p>
             <input
               className="input"
-              placeholder="Ta fausse réponse..."
+              placeholder={tr("Ta fausse réponse...")}
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && draft.trim() && setMyEntry('submissions', draft.trim())}
@@ -235,15 +235,13 @@ export default function Bluff() {
               className="btn btn-success"
               onClick={() => setMyEntry('submissions', draft.trim())}
               disabled={!draft.trim()}
-            >
-              Envoyer mon bluff
-            </button>
+            > {tr("Envoyer mon bluff")} </button>
           </div>
         ) : (
-          <Waiting text="Bluff envoyé. En attente des autres..." />
+          <Waiting text={tr("Bluff envoyé. En attente des autres...")} />
         )}
 
-        <TallyLine done={done} total={playerIds.length} label="ont bluffé" />
+        <TallyLine done={done} total={playerIds.length} label={tr("ont bluffé")} />
       </div>
     );
   }
@@ -256,13 +254,13 @@ export default function Bluff() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Bluff" subtitle="Où est la vérité ?" />
+        <MgHeader title="Bluff" subtitle={tr("Où est la vérité ?")} />
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={PICK_SECONDS}
-            onExpire={() => { if (isTPlayer) score(); }}
+            onExpire={() => { if (isController) score(); }}
           />
         </div>
 
@@ -272,8 +270,8 @@ export default function Bluff() {
 
         {!amPicker && (
           <div className="card" style={{ textAlign: 'center' }}>
-            <p className="result-winner" style={{ fontSize: 18 }}>🎯 Tu avais écrit la vérité !</p>
-            <p className="muted">+{mg.pointsValue} pts — tu ne votes pas ce tour.</p>
+            <p className="result-winner" style={{ fontSize: 18 }}>{tr("🎯 Tu avais écrit la vérité !")}</p>
+            <p className="muted">+{mg.pointsValue} {tr("pts — tu ne votes pas ce tour.")}</p>
           </div>
         )}
 
@@ -286,15 +284,15 @@ export default function Bluff() {
                 className={`btn btn-category ${myPick === opt.id ? 'voted' : ''}`}
                 onClick={() => amPicker && !myPick && !isMine && setMyEntry('picks', opt.id)}
                 disabled={!amPicker || !!myPick || isMine}
-                title={isMine ? 'Ton propre bluff' : undefined}
+                title={isMine ? tr("Ton propre bluff") : undefined}
               >
-                {opt.text}{isMine ? ' — ton bluff' : ''}
+                {opt.text}{isMine ? tr(" — ton bluff") : ''}
               </button>
             );
           })}
         </div>
 
-        <TallyLine done={done} total={pickerIds.length} label="ont choisi" />
+        <TallyLine done={done} total={pickerIds.length} label={tr("ont choisi")} />
       </div>
     );
   }
@@ -306,15 +304,15 @@ export default function Bluff() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Résultats" />
+        <MgHeader title={tr("Résultats")} />
 
         <div className="result-banner card" style={{ textAlign: 'center' }}>
-          <p className="label">La vérité était</p>
+          <p className="label">{tr("La vérité était")}</p>
           <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.trueAnswer}</p>
         </div>
 
         <div className="card">
-          <p className="label">Les réponses</p>
+          <p className="label">{tr("Les réponses")}</p>
           {options.map(opt => {
             const pickedBy = Object.entries(picks)
               .filter(([, o]) => o === opt.id)
@@ -327,11 +325,11 @@ export default function Bluff() {
                 <div className="bluff-row-head">
                   <strong>{opt.text}</strong>
                   {opt.id === TRUTH_ID
-                    ? <span className="bluff-badge bluff-true">VÉRITÉ</span>
+                    ? <span className="bluff-badge bluff-true">{tr("VÉRITÉ")}</span>
                     : <span className="bluff-badge">{authors.join(', ')}</span>}
                 </div>
                 <p className="muted" style={{ fontSize: 13 }}>
-                  {pickedBy.length ? `Choisi par ${pickedBy.join(', ')}` : 'Personne n\'a mordu'}
+                  {pickedBy.length ? tr("Choisi par {0}", [pickedBy.join(', ')]) : tr("Personne n'a mordu")}
                 </p>
               </div>
             );
@@ -346,8 +344,8 @@ export default function Bluff() {
               <div key={id} className="mg-row">
                 <span>{players[id]?.name}</span>
                 <span className="muted" style={{ fontSize: 13 }}>
-                  {d.foundTruth ? '🎯 vérité' : ''}{d.foundTruth && d.fooled ? ' · ' : ''}
-                  {d.fooled ? `🎭 ${d.fooled} dupé${d.fooled > 1 ? 's' : ''}` : ''}
+                  {d.foundTruth ? tr("🎯 vérité") : ''}{d.foundTruth && d.fooled ? ' · ' : ''}
+                  {d.fooled ? tr("🎭 {0} dupé{1}", [d.fooled, d.fooled > 1 ? 's' : '']) : ''}
                 </span>
                 <strong>+{awards[id] ?? 0}</strong>
               </div>
@@ -355,11 +353,9 @@ export default function Bluff() {
           })}
         </div>
 
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }

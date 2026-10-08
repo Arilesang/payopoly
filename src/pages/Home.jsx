@@ -1,148 +1,65 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
+import { identityStorage } from '../lib/identityStorage';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
 import ShowMarquee from '../components/ShowMarquee';
 
 export default function Home() {
-  const { t, lang, toggleLang } = useLang();
+  const { t, lang, toggleLang, say } = useLang();
   const { createGame, joinGame, error } = useGame();
   const navigate = useNavigate();
-
-  const [view, setView] = useState('main'); // 'main' | 'create_name' | 'join_code' | 'join_name'
+  const [params] = useSearchParams();
+  const invitation = (params.get('join') ?? '').toUpperCase();
+  const [view, setView] = useState(invitation ? 'join' : 'main');
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(invitation);
   const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
   const [showRules, setShowRules] = useState(false);
-
-  async function handleCreate() {
-    if (!name.trim()) return;
-    setLoading(true);
-    try {
-      const { gameId } = await createGame(name.trim());
-      navigate(`/lobby/${gameId}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleJoin() {
-    if (!name.trim() || !code.trim()) return;
-    setLoading(true);
-    try {
-      const { gameId } = await joinGame(code.trim().toUpperCase(), name.trim());
-      navigate(`/lobby/${gameId}`);
-    } catch {
-      setLoading(false);
-    }
-  }
-
-  function handleCodeSubmit(e) {
+  const [resume] = useState(() => {
+    try { return JSON.parse(identityStorage.getItem('payopoly_resume')); } catch { return null; }
+  });
+  const errors = {
+    gameNotFound: t('home.gameNotFound'),
+    gameStarted: say('Cette partie a commencé. Tu peux seulement reprendre ta place.', 'This game has started. You can only resume your existing seat.'),
+    connectionError: say('Connexion impossible. Réessaie.', 'Could not connect. Please try again.'),
+  };
+  async function submit(e) {
     e.preventDefault();
-    if (code.trim()) setView('join_name');
+    if (loading || !name.trim() || (view === 'join' && code.length !== 6)) return;
+    setLoading(true); setLocalError('');
+    try {
+      const result = view === 'create' ? await createGame(name.trim()) : await joinGame(code, name.trim());
+      navigate(`/lobby/${result.gameId}`);
+    } catch (err) { setLocalError(errors[err.message] ?? errors.connectionError); }
+    finally { setLoading(false); }
   }
-
-  return (
-    <div className="page page-home">
-      <button className="lang-toggle" onClick={toggleLang}>
-        {lang === 'fr' ? 'EN' : 'FR'}
-      </button>
-
-      <div className="home-content">
-        <p className="show-eyebrow">{t('home.showKicker')}</p>
-        <h1 className="home-title" aria-label={t('home.title')}><span>Payo</span><span>Poly</span></h1>
-        <p className="home-showline">{t('home.showline')}</p>
-        <p className="home-subtitle">{t('home.subtitle')}</p>
-
-        {view === 'main' && (
-          <>
-            <ShowMarquee />
-            <div className="btn-stack home-actions">
-              <button className="btn btn-primary" onClick={() => setView('create_name')}>
-                {t('home.createGame')}<span aria-hidden="true">↗</span>
-              </button>
-              <button className="btn btn-secondary" onClick={() => setView('join_code')}>
-                {t('home.joinGame')}
-              </button>
-              <button className="btn-rules" onClick={() => setShowRules(true)}>
-                {t('rules.button')}<span aria-hidden="true">↗</span>
-              </button>
-            </div>
-          </>
-        )}
-
-        {view === 'create_name' && (
-          <div className="card">
-            <h2>{t('home.enterName')}</h2>
-            <input
-              className="input"
-              aria-label={t('home.enterName')}
-              placeholder={t('home.namePlaceholder')}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              autoFocus
-            />
-            <div className="btn-stack">
-              <button className="btn btn-primary" onClick={handleCreate} disabled={!name.trim() || loading}>
-                {loading ? '...' : t('home.confirm')}
-              </button>
-              <button className="btn btn-ghost" onClick={() => setView('main')} aria-label={t('home.back')}>←</button>
-            </div>
-          </div>
-        )}
-
-        {view === 'join_code' && (
-          <div className="card">
-            <h2>{t('home.joinGame')}</h2>
-            <form onSubmit={handleCodeSubmit}>
-              <input
-                className="input input-code"
-                aria-label={t('home.roomCodePlaceholder')}
-                placeholder={t('home.roomCodePlaceholder')}
-                value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())}
-                maxLength={6}
-                autoFocus
-              />
-              {error === 'gameNotFound' && (
-                <p className="error-msg">{t('home.gameNotFound')}</p>
-              )}
-              <div className="btn-stack">
-                <button className="btn btn-primary" type="submit" disabled={!code.trim()}>
-                  {t('home.join')}
-                </button>
-                <button className="btn btn-ghost" type="button" onClick={() => setView('main')} aria-label={t('home.back')}>←</button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {view === 'join_name' && (
-          <div className="card">
-            <h2>{t('home.enterName')}</h2>
-            <input
-              className="input"
-              aria-label={t('home.enterName')}
-              placeholder={t('home.namePlaceholder')}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleJoin()}
-              autoFocus
-            />
-            <div className="btn-stack">
-              <button className="btn btn-primary" onClick={handleJoin} disabled={!name.trim() || loading}>
-                {loading ? '...' : t('home.confirm')}
-              </button>
-              <button className="btn btn-ghost" onClick={() => setView('join_code')} aria-label={t('home.back')}>←</button>
-            </div>
-          </div>
-        )}
-        <p className="home-footer">{t('game.solo')} / {t('game.duel')} / {t('game.all')}</p>
-      </div>
-
-      {showRules && <MinigameRulesPopup onClose={() => setShowRules(false)} />}
+  return <div className="page page-home">
+    <button className="lang-toggle" onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
+    <div className="home-content">
+      <p className="show-eyebrow">{t('home.showKicker')}</p>
+      <h1 className="home-title" aria-label={t('home.title')}><span>Payo</span><span>Poly</span></h1>
+      <p className="home-showline">{t('home.showline')}</p>
+      <p className="home-subtitle">{t('home.subtitle')}</p>
+      {view === 'main' ? <><ShowMarquee /><div className="btn-stack home-actions">
+        <button className="btn btn-primary" onClick={() => { setView('create'); setLocalError(''); }}>{t('home.createGame')}<span aria-hidden="true">↗</span></button>
+        <button className="btn btn-secondary" onClick={() => { setView('join'); setLocalError(''); }}>{t('home.joinGame')}</button>
+        {resume?.gameId && identityStorage.getItem(`payopoly_${resume.gameId}`) && <button className="btn btn-success" onClick={() => navigate(`/game/${resume.gameId}`)}>{say('Reprendre la partie', 'Resume game')} · {resume.gameId}</button>}
+        <button className="btn-rules" onClick={() => setShowRules(true)}>{t('rules.button')}<span aria-hidden="true">↗</span></button>
+      </div></> : <form className="card" onSubmit={submit}>
+        <h2>{view === 'create' ? t('home.createGame') : t('home.joinGame')}</h2>
+        {view === 'join' && <><label htmlFor="room-code">{say('Code de la partie', 'Room code')}</label>
+          <input id="room-code" className="input input-code" value={code} onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} maxLength={6} minLength={6} required autoComplete="off" autoFocus={!invitation} /></>}
+        <label htmlFor="player-name">{t('home.enterName')}</label>
+        <input id="player-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder={t('home.namePlaceholder')} maxLength={30} required autoFocus={view === 'create' || Boolean(invitation)} autoComplete="nickname" />
+        {(localError || errors[error]) && <p className="error-msg" role="alert">{localError || errors[error]}</p>}
+        <button className="btn btn-primary" type="submit" disabled={loading || !name.trim() || (view === 'join' && code.length !== 6)}>{loading ? say('Connexion…', 'Connecting…') : t('home.confirm')}</button>
+        <button className="btn btn-ghost" type="button" onClick={() => { setView('main'); setLocalError(''); }}>{say('Retour', 'Back')}</button>
+      </form>}
+      <p className="home-footer">{t('game.solo')} / {t('game.duel')} / {t('game.all')}</p>
     </div>
-  );
+    {showRules && <MinigameRulesPopup onClose={() => setShowRules(false)} />}
+  </div>;
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import fr from '../i18n/fr';
 import en from '../i18n/en';
 
@@ -7,9 +7,9 @@ const translations = { fr, en };
 const LangContext = createContext();
 
 export function LangProvider({ children }) {
-  const [lang, setLang] = useState('fr');
+  const [lang, setLang] = useState(() => localStorage.getItem('payopoly_language') === 'en' ? 'en' : 'fr');
 
-  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  useEffect(() => { localStorage.setItem('payopoly_language', lang); document.documentElement.lang = lang; }, [lang]);
 
   function t(path) {
     const keys = path.split('.');
@@ -25,7 +25,7 @@ export function LangProvider({ children }) {
   }
 
   return (
-    <LangContext.Provider value={{ lang, t, toggleLang }}>
+    <LangContext.Provider value={{ lang, t, toggleLang, setLang, say: (frText, enText) => lang === 'en' ? enText : frText }}>
       {children}
     </LangContext.Provider>
   );

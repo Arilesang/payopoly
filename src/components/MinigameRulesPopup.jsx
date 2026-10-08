@@ -3,19 +3,21 @@
 // Opened from Home (before a game exists) and from the game board, so it reads
 // nothing from GameContext: rules data plus the language toggle, that's all.
 
+import { useText } from '../context/useText';
 import { useState, useRef, useEffect } from 'react';
 import { useLang } from '../context/LangContext';
 import { MINIGAME_RULES } from '../data/minigameRules';
+import { scoringRule } from '../lib/rules';
 import { MINIGAME_META } from '../gameConfig';
 
 const ALL = '*';                              // "no filter", distinct from the 'all' type
 const FILTERS = [ALL, 'solo', 'duel', 'all'];
 
-export default function MinigameRulesPopup({ onClose }) {
+export default function MinigameRulesPopup({ onClose, initialId = null }) {
   const { t, lang } = useLang();
 
   const [filter, setFilter] = useState(ALL);
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(initialId);
   const [rolling, setRolling] = useState(false);
 
   const cardRefs = useRef({});
@@ -27,7 +29,7 @@ export default function MinigameRulesPopup({ onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const shown = MINIGAME_RULES.filter(g => filter === ALL || g.type === filter);
+  const shown = MINIGAME_RULES.filter(g => initialId ? g.id === initialId : filter === ALL || g.type === filter);
 
   function countFor(f) {
     return f === ALL ? MINIGAME_RULES.length : MINIGAME_RULES.filter(g => g.type === f).length;
@@ -52,20 +54,20 @@ export default function MinigameRulesPopup({ onClose }) {
 
   return (
     <div className="overlay rules-overlay" onClick={onClose}>
-      <div className="rules-sheet" onClick={e => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={t('rules.title')} className="rules-sheet" onClick={e => e.stopPropagation()}>
         <div className="rules-grabber" />
 
         <header className="rules-head">
           <div className="rules-head-text">
             <h2 className="rules-title">🎲 {t('rules.title')}</h2>
             <p className="rules-sub">
-              {t('rules.subtitle').replaceAll('{{count}}', MINIGAME_RULES.length)}
+              {t('rules.subtitle').replaceAll('{{count}}', initialId ? 1 : MINIGAME_RULES.length)}
             </p>
           </div>
           <button className="btn-close" onClick={onClose} aria-label={t('rules.close')}>✕</button>
         </header>
 
-        <div className="rules-tools">
+        {!initialId && <div className="rules-tools">
           <div className="rules-filters">
             {FILTERS.map(f => (
               <button
@@ -85,7 +87,7 @@ export default function MinigameRulesPopup({ onClose }) {
           >
             🎲
           </button>
-        </div>
+        </div>}
 
         <div className="rules-list">
           {shown.map((g, i) => (
@@ -113,6 +115,7 @@ export default function MinigameRulesPopup({ onClose }) {
 
 // ── One collapsible game card ─────────────────────────────────────────────
 function RuleCard({ game, lang, t, index, open, onToggle, cardRef }) {
+  const tr = useText();
   const minPlayers = MINIGAME_META[game.id]?.minPlayers ?? 2;
 
   return (
@@ -124,7 +127,7 @@ function RuleCard({ game, lang, t, index, open, onToggle, cardRef }) {
       <button className="rule-head" onClick={onToggle} aria-expanded={open}>
         <span className="rule-emoji">{game.emoji}</span>
         <span className="rule-head-text">
-          <span className="rule-name">{game.name}</span>
+          <span className="rule-name">{tr(game.name)}</span>
           <span className="rule-tagline">{game.tagline[lang]}</span>
         </span>
         <span className="rule-chevron">›</span>
@@ -152,7 +155,7 @@ function RuleCard({ game, lang, t, index, open, onToggle, cardRef }) {
             <span className="rule-note-icon">🏆</span>
             <span>
               <strong>{t('rules.scoring')}</strong>
-              {game.scoring[lang]}
+              {scoringRule(game.id, lang)}
             </span>
           </div>
 

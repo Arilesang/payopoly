@@ -1,0 +1,26 @@
+.demo-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  background: var(--stage);
+  border-bottom: 1px solid var(--gold);
+  color: var(--on-dark);
+  font-size: 13px;
+}
+.demo-bar p { margin-bottom: 5px; }
+.demo-bar .demo-turn { color: var(--on-dark); }
+.demo-bar div { display: flex; gap: 8px; }
+.demo-bar button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  background: var(--stage);
+  color: var(--on-dark);
+  font: inherit;
+  cursor: pointer;
+}
+.demo-bar .demo-switch { background: var(--gold); border-color: var(--gold); color: var(--stage); }

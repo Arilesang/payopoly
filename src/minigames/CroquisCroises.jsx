@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // ALL (mêlée) — Croquis Croisés
 // Everyone draws a different word at once, then a few drawings go up one at a
 // time: everyone invents a fake title, then everyone votes on the real one.
@@ -19,10 +20,11 @@ const MAX_REVEALS   = 3;
 const TRUTH_ID      = 'truth';
 
 export default function CroquisCroises() {
+  const tr = useText();
   const {
     game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame,
     pushMyStroke, updateMyCurrentStroke, clearMyDrawing, getLobbyPool,
-  } = useGame();
+   isController, fetchContent,} = useGame();
 
   const mg        = game?.currentMinigame;
   const players   = game?.players ?? {};
@@ -41,22 +43,23 @@ export default function CroquisCroises() {
 
   // ── TPlayer: all titles in → build the pick list ───────────────────────
   useEffect(() => {
-    if (mg?.phase !== 'titling' || !isTPlayer || !artistId) return;
+    if (mg?.phase !== 'titling' || !isController || !artistId) return;
     if (Object.keys(titles).length < others.length) return;
     openPicking();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.submissions, mg?.phase, mg?.revealIndex]);
+  }, [mg?.submissions, mg?.phase, mg?.revealIndex, isController]);
 
   // ── TPlayer: all picks in → score this drawing and move on ─────────────
   useEffect(() => {
-    if (mg?.phase !== 'picking' || !isTPlayer || !artistId) return;
+    if (mg?.phase !== 'picking' || !isController || !artistId) return;
     if (Object.keys(picks).length < others.length) return;
     scoreRound();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.picks, mg?.phase, mg?.revealIndex]);
+  }, [mg?.picks, mg?.phase, mg?.revealIndex, isController]);
 
   function startReveals() {
-    const order = shuffle(playerIds).slice(0, Math.min(MAX_REVEALS, playerIds.length));
+    const shown = game.showcaseCounts ?? {};
+    const order = shuffle(playerIds).sort((a, b) => (shown[a] ?? 0) - (shown[b] ?? 0)).slice(0, Math.min(MAX_REVEALS, playerIds.length));
     updateMinigame({
       revealOrder: order,
       revealIndex: 0,
@@ -140,10 +143,10 @@ export default function CroquisCroises() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Croquis Croisés" subtitle="Tout le monde dessine !" />
+        <MgHeader title={tr("Croquis Croisés")} subtitle={tr("Tout le monde dessine !")} />
         {isTPlayer ? (
           loading
-            ? <><div className="spinner" /><Waiting text="Distribution des mots..." /></>
+            ? <><div className="spinner" /><Waiting text={tr("Distribution des mots...")} /></>
             : <DiceRoll onResult={val => {
                 setLoading(true);
                 const pool = getLobbyPool();
@@ -151,12 +154,12 @@ export default function CroquisCroises() {
                 // ten players would stall the table for half a minute.
                 Promise.all(playerIds.map((id, i) => {
                   const cat = pool.length ? pool[(i * 7 + val) % pool.length] : 'Général';
-                  return fetch('/api/pictionary-word', {
+                  return fetchContent('/api/pictionary-word', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ category: cat, difficulty: val }),
+                    body: JSON.stringify({ category: cat, difficulty: val, variation: id }),
                   })
-                    .then(r => r.json())
+
                     .then(d => [id, d.word ?? '?'])
                     .catch(() => [id, '?']);
                 }))
@@ -169,7 +172,7 @@ export default function CroquisCroises() {
                   .finally(() => setLoading(false));
               }} />
         ) : (
-          <Waiting text="En attente du lancer de dé..." />
+          <Waiting text={tr("En attente du lancer de dé...")} />
         )}
       </div>
     );
@@ -183,11 +186,11 @@ export default function CroquisCroises() {
     return (
       <div className="page page-pictionary">
         <div className="pictionary-header">
-          <MgHeader title="Dessine !" subtitle={myWord} />
+          <MgHeader title={tr("Dessine !")} subtitle={myWord} />
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={DRAW_SECONDS}
-            onExpire={() => { if (isTPlayer) startReveals(); }}
+            onExpire={() => { if (isController) startReveals(); }}
           />
         </div>
         <DrawingCanvas
@@ -212,28 +215,28 @@ export default function CroquisCroises() {
       <div className="page page-minigame">
         <div className="pictionary-header">
           <MgHeader
-            title={`Dessin ${idx + 1}/${mg.revealOrder?.length ?? 1}`}
-            subtitle={amArtist ? 'Ton dessin !' : `de ${players[artistId]?.name}`}
+            title={tr("Dessin {0}/{1}", [idx + 1, mg.revealOrder?.length ?? 1])}
+            subtitle={amArtist ? tr("Ton dessin !") : tr("de {0}", [players[artistId]?.name])}
           />
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={TITLE_SECONDS}
-            onExpire={() => { if (isTPlayer) openPicking(); }}
+            onExpire={() => { if (isController) openPicking(); }}
           />
         </div>
 
         <DrawingCanvas isDrawer={false} strokes={art.strokes ?? {}} currentStroke={null} />
 
         {amArtist ? (
-          <Waiting text={`Les autres inventent un faux titre. Ton mot : ${mg.drawWords?.[artistId]}`} />
+          <Waiting text={tr("Les autres inventent un faux titre. Ton mot : {0}", [mg.drawWords?.[artistId]])} />
         ) : mine ? (
-          <Waiting text="Titre envoyé. En attente des autres..." />
+          <Waiting text={tr("Titre envoyé. En attente des autres...")} />
         ) : (
           // Keyed by round so a new drawing gets a genuinely empty box
           <TitleInput key={round} onSubmit={text => setMyEntry(`submissions/${round}`, text)} />
         )}
 
-        <TallyLine done={Object.keys(titles).length} total={others.length} label="ont proposé" />
+        <TallyLine done={Object.keys(titles).length} total={others.length} label={tr("ont proposé")} />
       </div>
     );
   }
@@ -248,13 +251,13 @@ export default function CroquisCroises() {
       <div className="page page-minigame">
         <div className="pictionary-header">
           <MgHeader
-            title={`Dessin ${idx + 1}/${mg.revealOrder?.length ?? 1}`}
-            subtitle="C'était quoi ?"
+            title={tr("Dessin {0}/{1}", [idx + 1, mg.revealOrder?.length ?? 1])}
+            subtitle={tr("C'était quoi ?")}
           />
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={PICK_SECONDS}
-            onExpire={() => { if (isTPlayer) scoreRound(); }}
+            onExpire={() => { if (isController) scoreRound(); }}
           />
         </div>
 
@@ -270,14 +273,14 @@ export default function CroquisCroises() {
                 onClick={() => !amArtist && !myPick && !isMine && setMyEntry(`picks/${round}`, opt.id)}
                 disabled={amArtist || !!myPick || isMine}
               >
-                {opt.text}{isMine ? ' — ton titre' : ''}
+                {opt.text}{isMine ? tr(" — ton titre") : ''}
               </button>
             );
           })}
         </div>
 
-        {amArtist && <Waiting text="Tu regardes — c'est ton dessin." />}
-        <TallyLine done={Object.keys(picks).length} total={others.length} label="ont choisi" />
+        {amArtist && <Waiting text={tr("Tu regardes — c'est ton dessin.")} />}
+        <TallyLine done={Object.keys(picks).length} total={others.length} label={tr("ont choisi")} />
       </div>
     );
   }
@@ -289,10 +292,10 @@ export default function CroquisCroises() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Résultats" />
+        <MgHeader title={tr("Résultats")} />
 
         <div className="card">
-          <p className="label">Les dessins</p>
+          <p className="label">{tr("Les dessins")}</p>
           {log.map((r, i) => (
             <div key={i} className="bluff-row">
               <div className="bluff-row-head">
@@ -300,8 +303,7 @@ export default function CroquisCroises() {
                 <span className="bluff-badge">{players[r.artistId]?.name}</span>
               </div>
               <p className="muted" style={{ fontSize: 13 }}>
-                {r.foundTruth}/{r.voters} l'ont reconnu
-              </p>
+                {r.foundTruth}/{r.voters} {tr("l'ont reconnu")} </p>
             </div>
           ))}
         </div>
@@ -319,11 +321,9 @@ export default function CroquisCroises() {
             ))}
         </div>
 
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }
@@ -334,17 +334,16 @@ export default function CroquisCroises() {
 // Its own component so that remounting it on a new round is what clears the
 // text, instead of an effect reaching in to reset state.
 function TitleInput({ onSubmit }) {
+  const tr = useText();
   const [draft, setDraft] = useState('');
   const send = () => draft.trim() && onSubmit(draft.trim());
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <p className="muted" style={{ fontSize: 13 }}>
-        Invente un titre crédible. Si quelqu'un le choisit, tu marques.
-      </p>
+      <p className="muted" style={{ fontSize: 13 }}> {tr("Invente un titre crédible. Si quelqu'un le choisit, tu marques.")} </p>
       <input
         className="input"
-        placeholder="Ton faux titre..."
+        placeholder={tr("Ton faux titre...")}
         value={draft}
         onChange={e => setDraft(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && send()}
@@ -352,9 +351,7 @@ function TitleInput({ onSubmit }) {
         autoFocus
         autoComplete="off"
       />
-      <button className="btn btn-success" onClick={send} disabled={!draft.trim()}>
-        Envoyer
-      </button>
+      <button className="btn btn-success" onClick={send} disabled={!draft.trim()}> {tr("Envoyer")} </button>
     </div>
   );
 }

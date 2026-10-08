@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // VotePanel — used in all 4 voting screens
 // mode: 'yesno' | 'pickwinner'
 // eligibleVoterIds: array of playerIds who can vote (spectators)
@@ -6,14 +7,11 @@
 // onVote(choice): called when this player votes
 
 export default function VotePanel({ mode, eligibleVoterIds, players, votes, onVote, myPlayerId, label }) {
+  const tr = useText();
   const myVote    = votes?.[myPlayerId];
   const canVote   = eligibleVoterIds?.includes(myPlayerId);
   const voteCount = Object.keys(votes ?? {}).length;
   const total     = eligibleVoterIds?.length ?? 0;
-
-  // Tally
-  const tally = {};
-  Object.values(votes ?? {}).forEach(v => { tally[v] = (tally[v] ?? 0) + 1; });
 
   return (
     <div className="vote-panel card">
@@ -26,15 +24,13 @@ export default function VotePanel({ mode, eligibleVoterIds, players, votes, onVo
             className={`btn btn-vote-yes ${myVote === 'yes' ? 'voted' : ''}`}
             onClick={() => !myVote && canVote && onVote('yes')}
             disabled={!!myVote || !canVote}
-          >
-            ✅ Oui {tally['yes'] ? `(${tally['yes']})` : ''}
+          > {tr("✅ Oui")}
           </button>
           <button
             className={`btn btn-vote-no ${myVote === 'no' ? 'voted' : ''}`}
             onClick={() => !myVote && canVote && onVote('no')}
             disabled={!!myVote || !canVote}
-          >
-            ❌ Non {tally['no'] ? `(${tally['no']})` : ''}
+          > {tr("❌ Non")}
           </button>
         </div>
       )}
@@ -48,16 +44,16 @@ export default function VotePanel({ mode, eligibleVoterIds, players, votes, onVo
               onClick={() => !myVote && canVote && onVote(id)}
               disabled={!!myVote || !canVote}
             >
-              {players[id]?.name} {tally[id] ? `— ${tally[id]} vote${tally[id] > 1 ? 's' : ''}` : ''}
+              {players[id]?.name}
             </button>
           ))}
         </div>
       )}
 
       {!canVote && !myVote && (
-        <p className="muted" style={{ textAlign: 'center' }}>Tu ne peux pas voter dans ce jeu.</p>
+        <p className="muted" style={{ textAlign: 'center' }}>{tr("Tu ne peux pas voter dans ce jeu.")}</p>
       )}
-      {myVote && <p className="vote-cast">✓ Vote enregistré</p>}
+      {myVote && <p className="vote-cast">{tr("✓ Vote enregistré")}</p>}
     </div>
   );
 }

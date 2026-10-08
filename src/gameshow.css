@@ -275,6 +275,21 @@ h3, .label, .show-eyebrow, .home-showline {
 .rule-note-score { background: #e9ae5833; border-color: var(--gold); }
 .rule-note-tip { background: var(--bg-dark); }
 
+/* Session features share the same stage and ticket treatments. */
+.session-controls { background: var(--stage); color: var(--on-dark); font: 10px var(--mono); border-bottom: 1px solid var(--gold); }
+.session-controls .btn { color: var(--on-dark); border-color: var(--gold); }
+.session-controls .btn:hover { background: var(--accent); }
+.invite-card { border: 1px dashed var(--stage); }
+.invite-card svg { border: 1px solid var(--border); }
+.invite-link { color: var(--stage); }
+.connection-banner, .round-note { background: var(--bg-card2); border-bottom: 1px dashed var(--stage); }
+.role-badge { font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.podium { background: var(--stage); color: var(--on-dark); border: 3px double var(--gold); }
+.podium .mg-row { border-color: #fff1d933; }
+.podium .mg-row strong { color: var(--gold); }
+.modal { border: 1px dashed var(--stage); }
+.btn[href] { text-decoration: none; }
+
 @media (max-width: 420px) {
   .game-header { flex-wrap: wrap; }
   .header-actions { justify-content: flex-start; }

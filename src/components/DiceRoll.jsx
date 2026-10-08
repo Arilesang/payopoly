@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useText } from '../context/useText';
+import { useGame } from '../context/GameContext';
+import { useState, useEffect, useRef } from 'react';
 
 const FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
-export default function DiceRoll({ onResult, autoRoll = false }) {
+export default function DiceRoll({ onResult, autoRoll: autoRollProp }) {
+  const tr = useText();
+  const { game } = useGame();
+  const autoRoll = autoRollProp ?? game?.settings?.preset === 'quick';
+  const rollStartedRef = useRef(false);
   const [face, setFace]       = useState('?');
   const [rolling, setRolling] = useState(false);
   const [result, setResult]   = useState(null);
@@ -13,7 +19,8 @@ export default function DiceRoll({ onResult, autoRoll = false }) {
   }, []);
 
   function roll() {
-    if (rolling || result) return;
+    if (rollStartedRef.current || rolling || result) return;
+    rollStartedRef.current = true;
     setRolling(true);
     const value = Math.floor(Math.random() * 6) + 1; // 1-6
     let ticks = 0;
@@ -40,7 +47,7 @@ export default function DiceRoll({ onResult, autoRoll = false }) {
         <p className="dice-result-text">{result} point{result > 1 ? 's' : ''}</p>
       )}
       {!result && !rolling && (
-        <button className="btn btn-primary" onClick={roll}>Lancer le dé</button>
+        <button className="btn btn-primary" onClick={roll}>{tr("Lancer le dé")}</button>
       )}
     </div>
   );

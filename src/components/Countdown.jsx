@@ -1,3 +1,4 @@
+import { now } from '../lib/clock';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Countdown({ startedAt, onExpire, total = 30 }) {
@@ -17,7 +18,7 @@ export default function Countdown({ startedAt, onExpire, total = 30 }) {
     firedRef.current = false;
 
     function tick() {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      const elapsed = Math.floor((now() - startedAt) / 1000);
       const left    = Math.max(0, total - elapsed);
       setRemaining(left);
       if (left === 0 && !firedRef.current) {

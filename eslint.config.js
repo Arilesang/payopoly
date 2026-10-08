@@ -6,6 +6,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+  { files: ['server/**/*.js', 'tests/**/*.js', 'tests/**/*.mjs', 'vite.config.js'], languageOptions: { globals: globals.node } },
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -23,6 +24,7 @@ export default defineConfig([
       },
     },
     rules: {
+      'react-refresh/only-export-components': ['error', { allowExportNames: ['useGame', 'useLang'] }],
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },

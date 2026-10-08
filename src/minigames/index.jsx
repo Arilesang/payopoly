@@ -1,6 +1,13 @@
+import { useText } from '../context/useText';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
+import { useLang } from '../context/LangContext';
+import RoundScoreSummary from '../components/RoundScoreSummary';
+import RoundIntro from '../components/RoundIntro';
+import SessionControls from '../components/SessionControls';
+import MinigameRulesPopup from '../components/MinigameRulesPopup';
+import { useState } from 'react';
 import PetitBacDuel   from './PetitBacDuel';
 import TriviaDuel     from './TriviaDuel';
 import TriviaAll      from './TriviaAll';
@@ -36,29 +43,32 @@ const COMPONENTS = {
 };
 
 export default function MinigameRouter() {
+  const tr = useText();
   const { gameId: urlGameId } = useParams();
-  // isMyTurn reads from currentTurn.playerId (always set).
+  // isController reads from currentTurn.playerId (always set).
   // isTPlayer reads from currentMinigame.tPlayerId (only set AFTER initMinigame runs).
-  // We must use isMyTurn here — isTPlayer is false until initMinigame completes.
-  const { game, loadGame, initMinigame, isMyTurn } = useGame();
+  // We must use isController here — isTPlayer is false until initMinigame completes.
+  const { game, loadGame, initMinigame, isController } = useGame();
   const navigate = useNavigate();
+  const { say } = useLang();
+  const [help, setHelp] = useState(false);
 
-  useEffect(() => { loadGame(urlGameId); }, [urlGameId]);
+  useEffect(() => { loadGame(urlGameId); }, [urlGameId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Back to game when turn advances after minigame completes
   useEffect(() => {
-    if (game?.currentTurn?.phase === 'choose_type') {
+    if (game?.currentTurn?.phase === 'choose_type' || game?.status === 'finished' || game?.status === 'lobby') {
       navigate(`/game/${urlGameId}`);
     }
-  }, [game?.currentTurn?.phase]);
+  }, [game?.currentTurn?.phase, game?.status, navigate, urlGameId]);
 
   // TPlayer initialises Firebase minigame state once on arrival
   useEffect(() => {
-    if (game && isMyTurn && game.currentTurn?.phase === 'playing') {
+    if (game && isController && game.currentTurn?.phase === 'playing') {
       initMinigame();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game?.currentTurn?.phase, isMyTurn]);
+  }, [game?.currentTurn?.phase, isController]);
 
   if (!game) return <div className="page page-center"><div className="spinner" /></div>;
 
@@ -69,11 +79,21 @@ export default function MinigameRouter() {
   if (!Component) {
     return (
       <div className="page page-center">
-        <h2>Mini-jeu non disponible</h2>
+        <h2>{tr("Mini-jeu non disponible")}</h2>
         <p className="muted">{turn.minigame}</p>
       </div>
     );
   }
 
-  return <Component />;
+  const mg = game.currentMinigame;
+  if (!mg || mg.id !== turn.id) return <div className="page page-center"><div className="spinner" /></div>;
+  return <>
+    <SessionControls />
+    <button className="btn btn-small btn-ghost round-help" onClick={() => setHelp(true)}>{say('Règles et aide', 'Rules and help')}</button>
+    {mg.fallback && <p className="connection-banner" role="status">{say('Contenu de secours · thème général', 'Backup content · general theme')}</p>}
+    {mg.phase === 'rules' ? <RoundIntro /> : <Component key={mg.id} />}
+    {['complete', 'results'].includes(mg.phase) && <RoundScoreSummary />}
+    {['complete', 'results'].includes(mg.phase) && <p className="round-note">{mg.winnerIds?.length > 1 ? say('Égalité : les points sont partagés.', 'Tie: points are shared.') : mg.name === 'Trivia' && !mg.winnerId ? say('Aucune bonne réponse : aucun point attribué.', 'No correct answers: no points awarded.') : ''}{say(' Le tour suivant commence automatiquement après 30 secondes.', ' The next turn starts automatically after 30 seconds.')}</p>}
+    {help && <MinigameRulesPopup initialId={key} onClose={() => setHelp(false)} />}
+  </>;
 }

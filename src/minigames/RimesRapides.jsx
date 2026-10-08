@@ -1,3 +1,5 @@
+import { useText } from '../context/useText';
+import { now } from '../lib/clock';
 // DUEL — Rimes Rapides
 // Two players alternate typing rhymes against a shot clock that shortens every
 // exchange. First to time out, repeat, or miss loses.
@@ -20,7 +22,7 @@ function ShotClock({ deadline }) {
   const [left, setLeft] = useState(0);
   useEffect(() => {
     if (!deadline) return;
-    const tick = () => setLeft(Math.max(0, deadline - Date.now()));
+    const tick = () => setLeft(Math.max(0, deadline - now()));
     tick();
     const id = setInterval(tick, 80);
     return () => clearInterval(id);
@@ -44,10 +46,11 @@ function ShotClock({ deadline }) {
 }
 
 export default function RimesRapides() {
+  const tr = useText();
   const {
     game, myPlayerId, isTPlayer, isPPlayer,
     updateMinigame, completeMinigame,
-  } = useGame();
+   isController, fetchContent,} = useGame();
 
   const mg      = game?.currentMinigame;
   const players = game?.players ?? {};
@@ -68,9 +71,9 @@ export default function RimesRapides() {
 
   // ── TPlayer holds the whistle: if the shot clock runs out, end the round ─
   useEffect(() => {
-    if (mg?.phase !== 'playing' || !isTPlayer || !mg.turnDeadline) return;
+    if (mg?.phase !== 'playing' || !isController || !mg.turnDeadline) return;
     const id = setInterval(() => {
-      if (Date.now() < mg.turnDeadline) return;
+      if (now() < mg.turnDeadline) return;
       clearInterval(id);
       updateMinigame({
         phase: 'complete',
@@ -80,7 +83,7 @@ export default function RimesRapides() {
     }, 120);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.turnDeadline, mg?.phase, mg?.activePlayerId]);
+  }, [mg?.turnDeadline, mg?.phase, mg?.activePlayerId, isController]);
 
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
@@ -124,7 +127,7 @@ export default function RimesRapides() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Rimes Rapides" subtitle={`${tName} ⚔️ ${pName}`} />
+        <MgHeader title={tr("Rimes Rapides")} subtitle={`${tName} ⚔️ ${pName}`} />
         {isTPlayer
           ? <DiceRoll onResult={val => {
               const cats = players[mg.tPlayerId]?.categories ?? [];
@@ -133,12 +136,12 @@ export default function RimesRapides() {
                 diceValue: val, pointsValue: val, difficulty: val,
                 category: cat, phase: 'seed_reveal',
               });
-              fetch('/api/rhymes', {
+              fetchContent('/api/rhymes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category: cat, difficulty: val }),
               })
-                .then(r => r.json())
+
                 .then(data => updateMinigame({
                   seedWord: data.seed ?? 'CHATEAU',
                   rhymePool: data.valid ?? [],
@@ -148,7 +151,7 @@ export default function RimesRapides() {
                   rhymePool: ['BATEAU', 'GATEAU', 'CADEAU', 'MANTEAU', 'RIDEAU', 'MARTEAU', 'PLATEAU'],
                 }));
             }} />
-          : <Waiting text="En attente du lancer de dé..." />}
+          : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
     );
   }
@@ -157,18 +160,15 @@ export default function RimesRapides() {
   if (mg.phase === 'seed_reveal') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Rimes Rapides" subtitle={`${tName} ⚔️ ${pName}`} />
+        <MgHeader title={tr("Rimes Rapides")} subtitle={`${tName} ⚔️ ${pName}`} />
         <div className="card" style={{ textAlign: 'center' }}>
-          <p className="label">Trouvez des rimes avec</p>
+          <p className="label">{tr("Trouvez des rimes avec")}</p>
           {!mg.seedWord
             ? <div className="spinner" style={{ margin: '8px auto' }} />
             : <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.seedWord}</p>}
           <hr style={{ margin: '16px 0', opacity: 0.15 }} />
           <p className="muted" style={{ fontSize: 13, textAlign: 'left', lineHeight: 1.6 }}>
-            📋 <strong>Règles :</strong> à tour de rôle, tapez un mot qui rime. Interdit de répéter.
-            Le chrono raccourcit à chaque échange — 7 secondes au début, 3 à la fin.
-            Le premier qui cale a perdu.
-          </p>
+            📋 <strong>{tr("Règles :")}</strong> {tr("à tour de rôle, tapez un mot qui rime. Interdit de répéter. Le chrono raccourcit à chaque échange — 7 secondes au début, 3 à la fin. Le premier qui cale a perdu.")} </p>
         </div>
         {isTPlayer && mg.seedWord && (
           <button
@@ -176,13 +176,11 @@ export default function RimesRapides() {
             onClick={() => updateMinigame({
               phase: 'playing',
               activePlayerId: mg.tPlayerId,
-              turnDeadline: Date.now() + clockFor(0),
+              turnDeadline: now() + clockFor(0),
             })}
-          >
-            C'est parti !
-          </button>
+          > {tr("C'est parti !")} </button>
         )}
-        {!isTPlayer && <Waiting text="Préparation..." />}
+        {!isTPlayer && <Waiting text={tr("Préparation...")} />}
       </div>
     );
   }
@@ -193,19 +191,17 @@ export default function RimesRapides() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Rimes Rapides" subtitle={`Rime avec ${mg.seedWord}`} />
+        <MgHeader title={tr("Rimes Rapides")} subtitle={tr("Rime avec {0}", [mg.seedWord])} />
 
         <ShotClock deadline={mg.turnDeadline} />
 
         <p className="rime-turn">
-          {myTurn ? '👉 À toi !' : `Au tour de ${activeName}`}
+          {myTurn ? tr("👉 À toi !") : tr("Au tour de {0}", [activeName])}
         </p>
 
         <div className="guess-feed" ref={feedRef}>
           {chain.length === 0 && (
-            <p className="muted" style={{ textAlign: 'center', padding: 12 }}>
-              Premier mot...
-            </p>
+            <p className="muted" style={{ textAlign: 'center', padding: 12 }}> {tr("Premier mot...")} </p>
           )}
           {chain.map(c => (
             <div key={c.key} className="guess-line">
@@ -215,26 +211,26 @@ export default function RimesRapides() {
           ))}
         </div>
 
-        {flash && <p className="rime-flash">❌ {flash}</p>}
+        {flash && <p className="rime-flash">❌ {tr(flash)}</p>}
 
         {amDuellist && (
           <div className="guess-input-row">
             <input
               className="input"
-              placeholder={myTurn ? 'Ta rime...' : 'Attends ton tour'}
+              placeholder={myTurn ? tr("Ta rime...") : tr("Attends ton tour")}
               value={draft}
               onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") submit(Date.now()); }}
+              onKeyDown={e => { if (e.key === "Enter") submit(now()); }}
               disabled={!myTurn}
               autoFocus
               autoComplete="off"
             />
-            <button className="btn btn-primary" onClick={() => submit(Date.now())} disabled={!myTurn || !draft.trim()}>
+            <button className="btn btn-primary" onClick={() => submit(now())} disabled={!myTurn || !draft.trim()}>
               Go
             </button>
           </div>
         )}
-        {!amDuellist && <Waiting text="Les duellistes s'affrontent..." />}
+        {!amDuellist && <Waiting text={tr("Les duellistes s'affrontent...")} />}
       </div>
     );
   }
@@ -247,24 +243,22 @@ export default function RimesRapides() {
 
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Résultat" />
+        <MgHeader title={tr("Résultat")} />
         <div className="result-banner card">
           <p className="result-winner">🏆 {players[mg.winnerId]?.name ?? '—'}</p>
           <p className="muted">+{points} pt{points > 1 ? 's' : ''}</p>
           {mg.loseReason && (
             <p className="muted" style={{ marginTop: 6 }}>
-              {loserName} a calé — <strong>{mg.loseReason}</strong>
+              {loserName} {tr("a calé —")} <strong>{tr(mg.loseReason)}</strong>
             </p>
           )}
           <p className="muted" style={{ marginTop: 8 }}>
-            {chain.length} rime{chain.length > 1 ? 's' : ''} trouvée{chain.length > 1 ? 's' : ''}
+            {chain.length} {tr("rime")}{chain.length > 1 ? 's' : ''} {tr("trouvée")}{chain.length > 1 ? 's' : ''}
           </p>
         </div>
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }

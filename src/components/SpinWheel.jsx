@@ -1,3 +1,5 @@
+import { useText } from '../context/useText';
+import { useLang } from '../context/LangContext';
 import { useRef, useEffect, useState } from 'react';
 
 const COLORS = [
@@ -6,7 +8,10 @@ const COLORS = [
 const INK = '#582b2d';
 const PAPER = '#fff1d9';
 
-export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false }) {
+export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false, autoSpin = false }) {
+  const tr = useText();
+  const { lang } = useLang();
+  const spinStartedRef = useRef(false);
   const canvasRef = useRef(null);
   const angleRef = useRef(0);
   const animationRef = useRef(null);
@@ -16,9 +21,15 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
 
   useEffect(() => {
     drawWheel(angleRef.current);
-  }, [items]);
+  }, [items, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => () => cancelAnimationFrame(animationRef.current), []);
+  useEffect(() => {
+    if (autoSpin) spin();
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      spinStartedRef.current = false;
+    };
+  }, [autoSpin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function drawWheel(angle) {
     const canvas = canvasRef.current;
@@ -54,7 +65,8 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       ctx.textAlign = 'right';
       ctx.fillStyle = i % COLORS.length === 0 || i % COLORS.length === 4 ? PAPER : INK;
       ctx.font = `bold ${items.length > 8 ? 10 : 12}px sans-serif`;
-      const label = item.length > 14 ? item.slice(0, 13) + '…' : item;
+      const translated = tr(item);
+      const label = translated.length > 14 ? translated.slice(0, 13) + '…' : translated;
       ctx.fillText(label, radius - 10, 4);
       ctx.restore();
     });
@@ -98,7 +110,8 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
   }
 
   function spin() {
-    if (spinning || done || disabled || items.length === 0) return;
+    if (spinStartedRef.current || spinning || done || disabled || items.length === 0) return;
+    spinStartedRef.current = true;
     setSpinning(true);
 
     const forcedIndex = forcedResult !== null ? items.indexOf(forcedResult) : -1;
@@ -115,7 +128,7 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     const extraSpins = (5 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
     const totalRotation = extraSpins + delta;
 
-    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 4000;
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : autoSpin ? 1600 : 4000;
     const startTime = performance.now();
     const startAngle = angleRef.current;
 
@@ -143,9 +156,9 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
   return (
     <div className="spin-wheel-container">
       <div className={`wheel-wrapper ${spinning ? 'is-spinning' : ''}`}>
-        <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" role="img" aria-label={items.join(', ')} />
+        <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" role="img" aria-label={items.map(item => tr(item)).join(', ')} />
       </div>
-      {result && <p className="wheel-result" aria-live="polite">{result}</p>}
+      {result && <p className="wheel-result" aria-live="polite">{tr(result)}</p>}
       <button
         className="btn btn-accent"
         onClick={spin}

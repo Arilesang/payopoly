@@ -1,4 +1,5 @@
 import MgHeader from '../components/MgHeader';
+import { useText } from '../context/useText';
 // ALL — Pictionary
 // Phases: dice → category_select → word_reveal → playing → voting → bonus_pick → complete
 import { useEffect, useState } from 'react';
@@ -8,11 +9,12 @@ import Countdown from '../components/Countdown';
 import DrawingCanvas from '../components/DrawingCanvas';
 
 export default function PictionaryAll() {
+  const tr = useText();
   const {
     game, myPlayerId, isTPlayer, isSpectator,
     updateMinigame, castVote, completeMinigame,
     pushDrawingStroke, updateCurrentStroke, clearDrawing,
-  } = useGame();
+   isController, fetchContent,} = useGame();
 
   const mg          = game?.currentMinigame;
   const players     = game?.players ?? {};
@@ -27,7 +29,7 @@ export default function PictionaryAll() {
 
   // TPlayer: tally votes → bonus_pick or complete
   useEffect(() => {
-    if (mg?.phase !== 'voting' || !isTPlayer) return;
+    if (mg?.phase !== 'voting' || !isController) return;
     const votes = mg.votes ?? {};
     if (Object.keys(votes).length < spectatorIds.length) return;
     const yes = Object.values(votes).filter(v => v === 'yes').length;
@@ -35,7 +37,7 @@ export default function PictionaryAll() {
     if (won) updateMinigame({ phase: 'bonus_pick', winnerId: mg.tPlayerId });
     else     updateMinigame({ phase: 'complete',   winnerId: null });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.votes, mg?.phase]);
+  }, [mg?.votes, mg?.phase, isController]);
 
   if (!mg) return <div className="page page-center"><div className="spinner" /></div>;
 
@@ -46,7 +48,7 @@ export default function PictionaryAll() {
         <MgHeader title="Pictionary" subtitle={tName} />
         {isTPlayer
           ? <DiceRoll onResult={val => updateMinigame({ diceValue: val, pointsValue: val, phase: 'category_select' })} />
-          : <p className="muted" style={{ textAlign: 'center' }}>En attente du lancer de dé...</p>}
+          : <p className="muted" style={{ textAlign: 'center' }}>{tr("En attente du lancer de dé...")}</p>}
       </div>
     );
   }
@@ -58,7 +60,7 @@ export default function PictionaryAll() {
         <MgHeader title="Pictionary" subtitle={`${mg.diceValue} pt${mg.diceValue > 1 ? 's' : ''}`} />
         {isTPlayer ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p className="label" style={{ textAlign: 'center' }}>Choisis une catégorie à dessiner</p>
+            <p className="label" style={{ textAlign: 'center' }}>{tr("Choisis une catégorie à dessiner")}</p>
             {myCategories.map(cat => (
               <button
                 key={cat}
@@ -68,12 +70,12 @@ export default function PictionaryAll() {
                   if (selecting) return;
                   setSelecting(true);
                   updateMinigame({ category: cat, phase: 'word_reveal' });
-                  fetch('/api/pictionary-word', {
+                  fetchContent('/api/pictionary-word', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ category: cat, difficulty: mg.diceValue }),
                   })
-                    .then(r => r.json())
+
                     .then(data => updateMinigame({ pictionaryWord: data.word }))
                     .catch(() => updateMinigame({ pictionaryWord: '?' }));
                 }}
@@ -83,7 +85,7 @@ export default function PictionaryAll() {
             ))}
           </div>
         ) : (
-          <p className="muted" style={{ textAlign: 'center' }}>{tName} choisit une catégorie...</p>
+          <p className="muted" style={{ textAlign: 'center' }}>{tName} {tr("choisit une catégorie...")}</p>
         )}
       </div>
     );
@@ -97,30 +99,28 @@ export default function PictionaryAll() {
         {isTPlayer ? (
           <>
             <div className="card" style={{ textAlign: 'center' }}>
-              <p className="label">Catégorie</p>
+              <p className="label">{tr("Catégorie")}</p>
               <p className="mg-category">{mg.category}</p>
-              <p className="label" style={{ marginTop: 12 }}>Mot à dessiner</p>
+              <p className="label" style={{ marginTop: 12 }}>{tr("Mot à dessiner")}</p>
               {!mg.pictionaryWord
                 ? <div className="spinner" style={{ margin: '8px auto' }} />
                 : <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.pictionaryWord}</p>}
               <hr style={{ margin: '16px 0', opacity: 0.15 }} />
               <p className="muted" style={{ fontSize: 13, textAlign: 'left', lineHeight: 1.6 }}>
-                📋 <strong>Règles :</strong> Dessine le mot sans écrire de lettres ni parler. Les autres joueurs devinent à voix haute. Tu as <strong>60 secondes</strong> !
+                📋 <strong>{tr("Règles :")}</strong> {tr("Dessine le mot sans écrire de lettres ni parler. Les autres joueurs devinent à voix haute. Tu as")} <strong>{tr("60 secondes")}</strong> !
               </p>
             </div>
             {mg.pictionaryWord && (
               <button
                 className="btn btn-success btn-large"
                 onClick={() => updateMinigame({ phase: 'playing', countdownStartedAt: Date.now() })}
-              >
-                Prêt à dessiner !
-              </button>
+              > {tr("Prêt à dessiner !")} </button>
             )}
           </>
         ) : (
           <div className="card" style={{ textAlign: 'center' }}>
             <p className="mg-category">{mg.category}</p>
-            <p className="muted" style={{ marginTop: 8 }}>{tName} prend connaissance du mot...</p>
+            <p className="muted" style={{ marginTop: 8 }}>{tName} {tr("prend connaissance du mot...")}</p>
           </div>
         )}
       </div>
@@ -134,13 +134,13 @@ export default function PictionaryAll() {
         <div className="pictionary-header">
           <MgHeader
             title="Pictionary"
-            subtitle={isTPlayer ? mg.pictionaryWord : `${mg.category} — Devinez !`}
+            subtitle={isTPlayer ? mg.pictionaryWord : tr("{0} — Devinez !", [mg.category])}
           />
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={60}
             onExpire={() => {
-              if (isTPlayer) updateMinigame({ phase: 'voting', wordRevealed: true, currentStroke: null });
+              if (isController) updateMinigame({ phase: 'voting', wordRevealed: true, currentStroke: null });
             }}
           />
         </div>
@@ -160,14 +160,13 @@ export default function PictionaryAll() {
   if (mg.phase === 'voting') {
     return (
       <div className="page page-minigame">
-        <MgHeader title="Vote" subtitle={`${tName} a-t-il/elle réussi ?`} />
+        <MgHeader title="Vote" subtitle={tr("{0} a-t-il/elle réussi ?", [tName])} />
         <div className="card" style={{ textAlign: 'center' }}>
-          <p className="label">Le mot était</p>
+          <p className="label">{tr("Le mot était")}</p>
           <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.pictionaryWord}</p>
         </div>
         <div className="vote-yesno">
           {['yes', 'no'].map(choice => {
-            const count  = Object.values(mg.votes ?? {}).filter(v => v === choice).length;
             const myVote = mg.votes?.[myPlayerId];
             return (
               <button
@@ -176,7 +175,7 @@ export default function PictionaryAll() {
                 onClick={() => isSpectator && !myVote && castVote(choice)}
                 disabled={!isSpectator || !!myVote}
               >
-                {choice === 'yes' ? '✅ Oui' : '❌ Non'} {count > 0 ? `(${count})` : ''}
+                {choice === 'yes' ? tr("✅ Oui") : tr("❌ Non")}
               </button>
             );
           })}
@@ -184,7 +183,7 @@ export default function PictionaryAll() {
         <p className="muted" style={{ textAlign: 'center' }}>
           {Object.keys(mg.votes ?? {}).length}/{spectatorIds.length} votes
         </p>
-        {isTPlayer && <p className="muted" style={{ textAlign: 'center' }}>Tu ne peux pas voter.</p>}
+        {isTPlayer && <p className="muted" style={{ textAlign: 'center' }}>{tr("Tu ne peux pas voter.")}</p>}
       </div>
     );
   }
@@ -194,7 +193,7 @@ export default function PictionaryAll() {
     const others = Object.entries(players).filter(([id]) => id !== mg.tPlayerId);
     return (
       <div className="page page-minigame">
-        <MgHeader title="Bonus" subtitle="Qui a deviné le premier ?" />
+        <MgHeader title="Bonus" subtitle={tr("Qui a deviné le premier ?")} />
         {isTPlayer ? (
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {others.map(([id, p]) => (
@@ -209,12 +208,10 @@ export default function PictionaryAll() {
             <button
               className="btn btn-ghost"
               onClick={() => updateMinigame({ bonusWinnerId: null, phase: 'complete' })}
-            >
-              Personne
-            </button>
+            > {tr("Personne")} </button>
           </div>
         ) : (
-          <p className="muted" style={{ textAlign: 'center', marginTop: 40 }}>{tName} choisit un bonus...</p>
+          <p className="muted" style={{ textAlign: 'center', marginTop: 40 }}>{tName} {tr("choisit un bonus...")}</p>
         )}
       </div>
     );
@@ -225,20 +222,18 @@ export default function PictionaryAll() {
     const bonusName = mg.bonusWinnerId ? players[mg.bonusWinnerId]?.name : null;
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Résultat" />
+        <MgHeader title={tr("Résultat")} />
         <div className="result-banner card">
           {mg.winnerId
             ? <p className="result-winner">🏆 {tName} +{mg.diceValue} pts</p>
-            : <p className="result-winner">😬 Raté !</p>}
+            : <p className="result-winner">{tr("😬 Raté !")}</p>}
           {bonusName && <p className="muted">🎉 {bonusName} +{mg.diceValue} pts (bonus)</p>}
         </div>
-        {isTPlayer && (
+        {isController && (
           <button
             className="btn btn-large btn-primary"
             onClick={() => completeMinigame(mg.winnerId, mg.bonusWinnerId)}
-          >
-            Continuer
-          </button>
+          > {tr("Continuer")} </button>
         )}
       </div>
     );

@@ -1,3 +1,4 @@
+import { useText } from '../context/useText';
 // ALL (mêlée) — Sondage Éclair
 // Everyone answers "qui est le plus susceptible de...", then everyone predicts
 // what the room answered. Points for being in the majority, and for reading it.
@@ -26,7 +27,8 @@ function majorityOf(answers) {
 }
 
 export default function SondageEclair() {
-  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame } = useGame();
+  const tr = useText();
+  const { game, myPlayerId, isTPlayer, updateMinigame, setMyEntry, completeMinigame,  isController,} = useGame();
 
   const mg        = game?.currentMinigame;
   const players   = game?.players ?? {};
@@ -38,19 +40,19 @@ export default function SondageEclair() {
 
   // ── TPlayer: everyone answered (or the clock ran out) → predicting ───────
   useEffect(() => {
-    if (mg?.phase !== 'answering' || !isTPlayer) return;
+    if (mg?.phase !== 'answering' || !isController) return;
     if (Object.keys(answers).length < playerIds.length) return;
     updateMinigame({ phase: 'predicting', countdownStartedAt: Date.now() });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.answers, mg?.phase]);
+  }, [mg?.answers, mg?.phase, isController]);
 
   // ── TPlayer: everyone predicted → score it ──────────────────────────────
   useEffect(() => {
-    if (mg?.phase !== 'predicting' || !isTPlayer) return;
+    if (mg?.phase !== 'predicting' || !isController) return;
     if (Object.keys(predictions).length < playerIds.length) return;
     score();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mg?.predictions, mg?.phase]);
+  }, [mg?.predictions, mg?.phase, isController]);
 
   function score() {
     const { tally, winners } = majorityOf(answers);
@@ -75,16 +77,16 @@ export default function SondageEclair() {
   if (mg.phase === 'dice') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title="Sondage Éclair" subtitle="Tout le monde joue !" />
+        <MgHeader title={tr("Sondage Éclair")} subtitle={tr("Tout le monde joue !")} />
         {isTPlayer
           ? <DiceRoll onResult={val => updateMinigame({
               diceValue: val,
               pointsValue: val,
-              surveyPrompt: randomSurveyPrompt(),
+              surveyPrompt: randomSurveyPrompt(game.settings?.language),
               phase: 'answering',
               countdownStartedAt: Date.now(),
             })} />
-          : <Waiting text="En attente du lancer de dé..." />}
+          : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
     );
   }
@@ -99,8 +101,8 @@ export default function SondageEclair() {
     return (
       <div className="page page-minigame">
         <MgHeader
-          title="Sondage Éclair"
-          subtitle={isPredicting ? 'Et le groupe, il a dit quoi ?' : 'Qui est le plus susceptible de...'}
+          title={tr("Sondage Éclair")}
+          subtitle={isPredicting ? tr("Et le groupe, il a dit quoi ?") : tr("Qui est le plus susceptible de...")}
         />
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -108,7 +110,7 @@ export default function SondageEclair() {
             startedAt={mg.countdownStartedAt}
             total={isPredicting ? PREDICT_SECONDS : ANSWER_SECONDS}
             onExpire={() => {
-              if (!isTPlayer) return;
+              if (!isController) return;
               if (isPredicting) score();
               else updateMinigame({ phase: 'predicting', countdownStartedAt: Date.now() });
             }}
@@ -116,12 +118,10 @@ export default function SondageEclair() {
         </div>
 
         <div className="card" style={{ textAlign: 'center' }}>
-          <p className="label">{isPredicting ? 'Rappel de la question' : 'Question'}</p>
+          <p className="label">{isPredicting ? tr("Rappel de la question") : 'Question'}</p>
           <p className="survey-prompt">{mg.surveyPrompt} ?</p>
           {isPredicting && (
-            <p className="muted" style={{ fontSize: 14, marginTop: 8 }}>
-              Devine la réponse la plus choisie par le groupe.
-            </p>
+            <p className="muted" style={{ fontSize: 14, marginTop: 8 }}> {tr("Devine la réponse la plus choisie par le groupe.")} </p>
           )}
         </div>
 
@@ -133,12 +133,12 @@ export default function SondageEclair() {
               onClick={() => !mine && setMyEntry(field, id)}
               disabled={!!mine}
             >
-              {players[id]?.name}{id === myPlayerId ? ' (toi)' : ''}
+              {players[id]?.name}{id === myPlayerId ? tr(" (toi)") : ''}
             </button>
           ))}
         </div>
 
-        <TallyLine done={done} total={playerIds.length} label={isPredicting ? 'ont deviné' : 'ont répondu'} />
+        <TallyLine done={done} total={playerIds.length} label={isPredicting ? tr("ont deviné") : tr("ont répondu")} />
       </div>
     );
   }
@@ -155,10 +155,10 @@ export default function SondageEclair() {
 
     return (
       <div className="page page-minigame">
-        <MgHeader title="Résultats" subtitle={mg.surveyPrompt} />
+        <MgHeader title={tr("Résultats")} subtitle={mg.surveyPrompt} />
 
         <div className="card">
-          <p className="label">Le groupe a dit</p>
+          <p className="label">{tr("Le groupe a dit")}</p>
           <div className="bar-chart">
             {ranked.map(({ id, count }) => (
               <div key={id} className="bar-row">
@@ -189,16 +189,12 @@ export default function SondageEclair() {
               </div>
             );
           })}
-          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            🎯 d'accord avec le groupe &nbsp;·&nbsp; 🔮 a deviné le groupe
-          </p>
+          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}> {tr("🎯 d'accord avec le groupe · 🔮 a deviné le groupe")} </p>
         </div>
 
-        {isTPlayer
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}>
-              Continuer
-            </button>
-          : <Waiting text={`${tName} va continuer...`} />}
+        {isController
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );
   }
