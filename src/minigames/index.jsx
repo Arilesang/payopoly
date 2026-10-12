@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { useLang } from '../context/LangContext';
 import RoundScoreSummary from '../components/RoundScoreSummary';
+import ScoreSheet from '../components/ScoreSheet';
 import RoundIntro from '../components/RoundIntro';
 import SessionControls from '../components/SessionControls';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
@@ -89,6 +90,7 @@ export default function MinigameRouter() {
   if (!mg || mg.id !== turn.id) return <div className="page page-center"><div className="spinner" /></div>;
   return <>
     <SessionControls />
+    <ScoreSheet />
     <button className="btn btn-small btn-ghost round-help" onClick={() => setHelp(true)}>{say('Règles et aide', 'Rules and help')}</button>
     {mg.fallback && <p className="connection-banner" role="status">{say('Contenu de secours · thème général', 'Backup content · general theme')}</p>}
     {mg.phase === 'rules' ? <RoundIntro /> : <Component key={mg.id} />}

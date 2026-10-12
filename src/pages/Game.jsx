@@ -8,7 +8,7 @@ import MinigameRulesPopup from '../components/MinigameRulesPopup';
 import Results from './Results';
 import SessionControls from '../components/SessionControls';
 import { wheelGames } from '../lib/session';
-import Leaderboard from '../components/Leaderboard';
+import ScoreSheet from '../components/ScoreSheet';
 import { identityStorage } from '../lib/identityStorage';
 
 const CATEGORIES_TO_ENTER = 3;
@@ -187,7 +187,7 @@ export default function Game() {
         </div>
 
         <SessionControls />
-        <Leaderboard players={players} t={t} />
+        <ScoreSheet />
 
         <div className="turn-area">
           {isMyTurn ? (

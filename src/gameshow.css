@@ -311,3 +311,37 @@ h3, .label, .show-eyebrow, .home-showline {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Persistent standings ticket and native modal bottom sheet. */
+.score-sheet-space { height: 72px; flex-shrink: 0; order: 999; }
+.score-sheet-trigger { position: fixed; z-index: 30; bottom: max(12px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(calc(100% - 32px), 436px); min-height: 54px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--accent); color: var(--on-dark); border: 1px solid var(--gold); border-radius: 3px; box-shadow: 0 3px 0 var(--stage), 0 4px 20px #582b2d33; font: 22px var(--display); text-transform: uppercase; cursor: pointer; }
+.score-sheet-position { font: 12px 'Show Body', sans-serif; white-space: nowrap; }
+.score-sheet { position: fixed; inset: auto 0 0; margin: 0 auto; width: min(100%, 480px); max-width: 100%; max-height: 78svh; padding: 0; color: var(--text); background: var(--bg-card); border: 1px solid var(--stage); border-bottom: 0; border-radius: 14px 14px 0 0; overflow: hidden; box-shadow: 0 -8px 40px #582b2d33; }
+.score-sheet[open] { animation: score-sheet-up .22s ease-out; }
+.score-sheet::backdrop { background: #26191b88; }
+.score-sheet-content { display: flex; flex-direction: column; max-height: 78svh; padding: 0 20px max(20px, env(safe-area-inset-bottom)); }
+.score-sheet-handle { padding: 14px 0 16px; touch-action: none; }
+.score-sheet-handle span { display: block; margin: auto; width: 44px; height: 5px; border-radius: 8px; background: var(--text-muted); opacity: .65; }
+.score-sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 20px; }
+.score-sheet-header h2 { font-size: 34px; }
+.score-sheet-header p { font-size: 12px; margin-top: 7px; }
+.score-sheet-header .btn-close { background: transparent; color: var(--stage); cursor: pointer; }
+.score-sheet-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.score-sheet-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.score-sheet-table thead th { font: 9px var(--mono); text-transform: uppercase; padding: 12px 3px; border-block: 1px dashed var(--border); }
+.score-sheet-table th:first-child { width: 42%; text-align: left; }
+.score-sheet-table tbody th, .score-sheet-table td { padding: 16px 4px; border-bottom: 1px dashed var(--border); font-weight: 700; font-size: 16px; }
+.score-sheet-table td { text-align: center; }
+.score-sheet-table tbody th { font-size: 14px; }
+.score-sheet-rank { display: inline-block; width: 23px; color: var(--text-muted); vertical-align: top; }
+.score-sheet-name { display: inline-block; max-width: calc(100% - 23px); overflow-wrap: anywhere; }
+.score-sheet-name small { font-size: 10px; font-weight: 400; }
+.score-sheet-me { background: #e9ae5844; outline: 1px solid var(--gold); outline-offset: -1px; }
+.score-gain { color: var(--success); }
+.score-loss { color: var(--danger); }
+.score-sheet-legend { font-size: 11px; line-height: 1.6; padding-top: 16px; }
+.score-sheet-live { font-size: 11px; color: var(--text-muted); padding-top: 8px; }
+@keyframes score-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .score-sheet[open] { animation: none; } }
+.score-sheet-management { margin-top: 16px; font-size: 12px; }
+.score-sheet-management summary { padding: 12px 0; cursor: pointer; }

@@ -49,7 +49,13 @@ export function finishTurn(room, awards, now, expectedTurnId, reason = null) {
   Object.entries(payouts).forEach(([id, value]) => { players[id].points = Math.round(((players[id].points ?? 0) + value) * 10) / 10; });
   const order = (room.playerOrder ?? []).filter(id => players[id]);
   const turn = room.currentTurn;
-  const history = [...(room.history ?? []), { turnId: turn.id, key: `${turn.minigameType}:${turn.minigame}`, playerId: turn.playerId, awards: payouts, skipped: reason, at: now }];
+  const history = [...(room.history ?? []), {
+    turnId: turn.id, key: `${turn.minigameType}:${turn.minigame}`, playerId: turn.playerId,
+    awards: payouts,
+    scoresBefore: Object.fromEntries(Object.entries(room.players ?? {}).map(([id, p]) => [id, p.points ?? 0])),
+    scoresAfter: Object.fromEntries(Object.entries(players).map(([id, p]) => [id, p.points ?? 0])),
+    skipped: reason, at: now,
+  }];
   const turnsPlayed = (room.turnsPlayed ?? 0) + 1;
   const totalTurns = room.totalTurns ?? order.length * (room.settings?.rounds ?? 3);
   const end = turnsPlayed >= totalTurns || order.length < 2;

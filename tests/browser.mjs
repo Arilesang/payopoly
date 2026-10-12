@@ -44,6 +44,13 @@ try {
   await patchRoom(r => { r.currentTurn.playerId=hostId; r.playerOrder=[hostId,'guest']; });
   await expectText('Choose a mini-game type');
   assert.equal((await state()).games[code].totalTurns, 2);
+  // Bottom ticket opens a native modal and restores focus on dismissal.
+  await page.getByRole('button', { name: /Rankings/ }).click();
+  await page.getByRole('dialog', { name: 'Rankings' }).waitFor();
+  await expectText('No completed games yet');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('dialog').count(), 0);
+  assert.equal(await page.getByRole('button', { name: /Rankings/ }).evaluate(el => el === document.activeElement), true);
   // Seed each implemented minigame at the same actual route and exercise the intro and dice.
   const variants = [['solo','Petit Bac'],['duel','Petit Bac'],['duel','Trivia'],['all','Trivia'],['all','Mimes'],['all','Pictionary'],['solo','Mot Melangés'],['all','Sondage Éclair'],['all','Mot Interdit'],['duel','Punchline'],['all','Bluff'],['all','Le Curseur'],['all','Qui a écrit ça'],['duel','Rimes Rapides'],['all','Croquis Croisés']];
   for (const [type, name] of variants) {
@@ -55,6 +62,10 @@ try {
     });
     await page.goto(`${origin}/game/${code}/minigame`);
     await expectText('How to play');
+    await page.getByRole('button', { name: /Rankings/ }).click();
+    await page.getByRole('dialog', { name: 'Rankings' }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
     await page.getByRole('button', { name: 'Got it · ready!' }).click();
     await patchRoom(r => { r.currentMinigame.rulesReady = Object.fromEntries(Object.keys(r.players).map(id => [id,true])); });
     await page.getByRole('button', { name: 'Roll the die', exact:true }).waitFor();
@@ -109,6 +120,15 @@ try {
   await page.evaluate(() => { const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Continue');b.click();b.click(); });
   await until(async()=> (await state()).games[code].turnsPlayed === 1);
   await expectText('Turn 2/6');
+  await page.getByRole('button', { name: /Rankings/ }).click();
+  await expectText('After the last completed game');
+  assert.equal(await page.locator('.score-sheet-table tbody tr').count(), 4);
+  assert.equal(await page.locator('.score-sheet-me td').first().innerText(), '2');
+  assert.equal(await page.locator('.score-sheet-me td').nth(1).innerText(), '+2');
+  assert.equal(await page.locator('.score-sheet-me td').nth(2).innerText(), '—');
+  assert.equal(await page.locator('.score-sheet-table tbody tr').filter({ hasText: 'Spectator 2' }).locator('td').last().innerText(), '↓ 2');
+  await page.screenshot({ path: '/tmp/payopoly-score-sheet.png' });
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
   let after=(await state()).games[code];assert.equal(after.turnsPlayed,1);assert.equal(after.players[hostId].points,2);assert.equal(after.players.guest.points,2);
   // No-vote expiry is a complete, neutral result rather than an indefinite wait.
   await patchRoom(r=>{r.currentTurn={id:'vote:empty',playerId:hostId,phase:'playing',minigameType:'all',minigame:'Mimes',startedAt:Date.now()};r.currentMinigame={id:'vote:empty',type:'all',name:'Mimes',tPlayerId:hostId,phase:'voting',phaseStartedAt:Date.now()-26000,diceValue:4,pointsValue:4,votes:{}};});
