@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { ref, set, onValue, update, runTransaction, onDisconnect, serverTimestamp } from 'firebase/database';
+import { ref, set, get, onValue, update, runTransaction, onDisconnect, serverTimestamp } from 'firebase/database';
 import { db } from '../firebase';
 import { shuffle } from '../utils';
 import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, PREDICTION_DUELS, PRE_PLAY_PHASES, availableMinigames } from '../gameConfig';
-import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent, seatPlayer } from '../lib/session';
+import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent, seatPlayer, generateCode, codeVariants } from '../lib/session';
 import { requestContent } from '../lib/content';
 import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
@@ -13,7 +13,6 @@ const GameContext = createContext();
 
 const CATEGORIES_PER_PLAYER = 3;
 
-function generateCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
 function generateId()   { return Math.random().toString(36).substring(2, 14); }
 
 // ── Collect every category across all players in this lobby ─────────────────
@@ -95,8 +94,17 @@ export function GameProvider({ children }) {
     return { gameId: id, playerId };
   }
 
-  async function joinGame(id, playerName) {
+  // Finds the room a typed code means when it has look-alike characters (0/O, 1/I/L).
+  async function resolveCode(code) {
+    const variants = codeVariants(code);
+    if (variants.length === 1) return code;
+    const found = await Promise.all(variants.map(c => get(ref(db, `games/${c}/status`)).then(snap => snap.exists() ? c : null)));
+    return found.find(Boolean) ?? code;
+  }
+
+  async function joinGame(code, playerName) {
     setError(null);
+    const id = await resolveCode(code);
     const stored = identityStorage.getItem(`payopoly_${id}`);
     const newId = generateId();
     let playerId = newId;

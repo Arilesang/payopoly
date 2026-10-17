@@ -116,6 +116,21 @@ export function finishTurn(room, awards, now, expectedTurnId, reason = null) {
     currentTurn: end ? null : { id: `${room.sessionId}:${turnsPlayed}`, playerId: order[nextIndex], phase: 'choose_type', startedAt: now, roundNumber } };
 }
 // ── Joining ───────────────────────────────────────────────────────────────
+// New room codes skip characters that read alike (0/O, 1/I/L) and are always six long.
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export function generateCode(random = Math.random) {
+  return Array.from({ length: 6 }, () => CODE_ALPHABET[Math.floor(random() * CODE_ALPHABET.length)]).join('');
+}
+// Older codes may still contain look-alikes, so a typed code is tried with each
+// reading of them, as typed first.
+const LOOK_ALIKES = [['0', 'O'], ['1', 'I', 'L']];
+export function codeVariants(code) {
+  return [...code].reduce((variants, char) => {
+    const options = LOOK_ALIKES.find(group => group.includes(char));
+    const chars = options ? [char, ...options.filter(c => c !== char)] : [char];
+    return variants.flatMap(v => chars.map(c => v + c));
+  }, ['']).slice(0, 64);
+}
 // Seats a player in a room at any stage. A name matching a disconnected seat
 // reclaims it (e.g. a new browser lost the saved seat). Late joiners go to the
 // end of the rotation and get one turn for each cycle still to play.

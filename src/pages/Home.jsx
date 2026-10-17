@@ -51,7 +51,7 @@ export default function Home() {
       </div></> : <form className="card" onSubmit={submit}>
         <h2>{view === 'create' ? t('home.createGame') : t('home.joinGame')}</h2>
         {view === 'join' && <><label htmlFor="room-code">{say('Code de la partie', 'Room code')}</label>
-          <input id="room-code" className="input input-code" value={code} onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} maxLength={6} minLength={6} required autoComplete="off" autoFocus={!invitation} /></>}
+          <input id="room-code" className="input input-code" value={code} onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} maxLength={6} minLength={6} required autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoFocus={!invitation} /></>}
         <label htmlFor="player-name">{t('home.enterName')}</label>
         <input id="player-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder={t('home.namePlaceholder')} maxLength={30} required autoFocus={view === 'create' || Boolean(invitation)} autoComplete="nickname" />
         {(localError || errors[error]) && <p className="error-msg" role="alert">{localError || errors[error]}</p>}

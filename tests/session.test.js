@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent, seatPlayer } from '../src/lib/session.js';
+import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent, seatPlayer, generateCode, codeVariants } from '../src/lib/session.js';
 import { fallbackContent, validContent, requestContent } from '../src/lib/content.js';
 import { votesSettled, topVote } from '../src/utils.js';
 const room = () => ({ status: 'play', sessionId: 's', settings: { rounds: 1, scoring: 'dice' }, initialPlayerCount: 2,
@@ -164,4 +164,12 @@ test('joining reclaims a disconnected seat by name and refuses a connected one',
   assert.equal(seatPlayer(r, { storedId: 'b', newId: 'z', name: 'Bo', now: 2000 }).playerId, 'b');
   const lobby = seatPlayer({ status: 'lobby', players: {} }, { newId: 'z', name: 'Zed', now: 0 }).room;
   assert.deepEqual(lobby.players.z, { name: 'Zed', ready: false, points: 0, categoriesSubmitted: false });
+});
+test('room codes avoid look-alikes, and typed look-alikes still find older rooms', () => {
+  for (let i = 0; i < 200; i++) assert.match(generateCode(), /^[A-HJKMNP-Z2-9]{6}$/);
+  assert.equal(generateCode(() => 0.999999).length, 6);
+  assert.deepEqual(codeVariants('ABCDEF'), ['ABCDEF']);
+  assert.deepEqual(codeVariants('06BMD2'), ['06BMD2', 'O6BMD2']);
+  assert.deepEqual(codeVariants('1X0'), ['1X0', '1XO', 'IX0', 'IXO', 'LX0', 'LXO']);
+  assert.equal(codeVariants('000000').length, 64);
 });
