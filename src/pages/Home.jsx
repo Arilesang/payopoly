@@ -23,7 +23,7 @@ export default function Home() {
   });
   const errors = {
     gameNotFound: t('home.gameNotFound'),
-    gameStarted: say('Cette partie a commencé. Tu peux seulement reprendre ta place.', 'This game has started. You can only resume your existing seat.'),
+    nameTaken: say('Ce prénom est déjà pris par un joueur connecté. Choisis-en un autre.', 'This name is already used by a connected player. Pick another one.'),
     connectionError: say('Connexion impossible. Réessaie.', 'Could not connect. Please try again.'),
   };
   async function submit(e) {

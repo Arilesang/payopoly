@@ -1,4 +1,5 @@
 import { MINIGAME_META, BOUNTY_SHARE, PREDICTION_DUELS, availableMinigames } from '../gameConfig.js';
+import { shuffle } from '../utils.js';
 
 export const DEFAULT_SETTINGS = { rounds: null, preset: 'classic', language: 'fr', scoring: 'dice' };
 export const CATEGORIES = {
@@ -114,6 +115,33 @@ export function finishTurn(room, awards, now, expectedTurnId, reason = null) {
     currentTurnIndex: nextIndex, currentMinigame: null,
     currentTurn: end ? null : { id: `${room.sessionId}:${turnsPlayed}`, playerId: order[nextIndex], phase: 'choose_type', startedAt: now, roundNumber } };
 }
+// ── Joining ───────────────────────────────────────────────────────────────
+// Seats a player in a room at any stage. A name matching a disconnected seat
+// reclaims it (e.g. a new browser lost the saved seat). Late joiners go to the
+// end of the rotation and get one turn for each cycle still to play.
+export function seatPlayer(room, { storedId, newId, name, now }) {
+  if (storedId && room.players?.[storedId]) return { room, playerId: storedId };
+  const key = name.trim().toLowerCase();
+  const same = Object.keys(room.players ?? {}).find(id => room.players[id].name?.trim().toLowerCase() === key);
+  if (same) return onlineIds(room, now).includes(same) ? { error: 'nameTaken' } : { room, playerId: same };
+  const player = { name, ready: false, points: 0, categoriesSubmitted: false };
+  if (room.status !== 'lobby') {
+    const taken = Object.values(room.players ?? {}).flatMap(p => p.defaultCategories ?? []);
+    const pool = CATEGORIES[room.settings?.language] ?? CATEGORIES.fr;
+    const free = pool.filter(c => !taken.includes(c));
+    const defaults = shuffle(free.length >= 2 ? free : pool).slice(0, 2);
+    Object.assign(player, { categories: defaults, defaultCategories: defaults, categoriesSubmitted: room.status !== 'prep' || !!room.distributionDone });
+  }
+  const next = { ...room, players: { ...room.players, [newId]: player } };
+  if (room.status === 'play') {
+    const order = (room.playerOrder ?? []).filter(id => room.players[id]);
+    const remaining = Math.max(0, (room.totalTurns ?? 0) - (room.turnsPlayed ?? 0));
+    next.playerOrder = [...order, newId];
+    next.totalTurns = (room.totalTurns ?? 0) + Math.ceil(remaining / Math.max(1, order.length));
+  }
+  return { room: next, playerId: newId };
+}
+
 export function tiedLeaders(votes) {
   const tally = {};
   Object.values(votes ?? {}).forEach(v => { tally[v] = (tally[v] ?? 0) + 1; });

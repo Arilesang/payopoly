@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent } from '../src/lib/session.js';
+import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent, seatPlayer } from '../src/lib/session.js';
 import { fallbackContent, validContent, requestContent } from '../src/lib/content.js';
 import { votesSettled, topVote } from '../src/utils.js';
 const room = () => ({ status: 'play', sessionId: 's', settings: { rounds: 1, scoring: 'dice' }, initialPlayerCount: 2,
@@ -146,4 +146,22 @@ test('duels are recorded for head-to-head and the last opponent', () => {
   assert.equal(lastDuelOpponent(history, 'a'), 'c');
   assert.equal(lastDuelOpponent(history, 'b'), 'a');
   assert.equal(lastDuelOpponent([], 'a'), null);
+});
+test('late joiners get a seat at the end of the rotation and one turn per remaining round', () => {
+  const r = { ...room(), settings: { rounds: 3 }, totalTurns: 6, turnsPlayed: 1, currentTurn: { id: 's:1', playerId: 'b' },
+    players: { a: { name: 'Ana', points: 3, defaultCategories: ['Sports', 'Films'] }, b: { name: 'Bo', points: 2 } } };
+  const { room: next, playerId } = seatPlayer(r, { newId: 'c', name: 'Cy', now: 1000 });
+  assert.equal(playerId, 'c'); assert.deepEqual(next.playerOrder, ['a', 'b', 'c']); assert.equal(next.totalTurns, 9);
+  assert.equal(next.players.c.points, 0); assert.equal(next.players.c.categories.length, 2); assert.ok(!next.players.c.categories.includes('Sports'));
+  let state = next; const turns = [];
+  while (state.status === 'play') { turns.push(state.currentTurn.playerId); state = finishTurn(state, {}, 2000, state.currentTurn.id); }
+  assert.deepEqual(turns, ['b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']);
+});
+test('joining reclaims a disconnected seat by name and refuses a connected one', () => {
+  const r = { ...room(), players: { a: { name: 'Ludine', points: 4 }, b: { name: 'Bo' } }, presence: { b: { t: { online: true, lastSeen: 1000 } } } };
+  assert.equal(seatPlayer(r, { newId: 'z', name: ' ludine ', now: 2000 }).playerId, 'a');
+  assert.equal(seatPlayer(r, { newId: 'z', name: 'BO', now: 2000 }).error, 'nameTaken');
+  assert.equal(seatPlayer(r, { storedId: 'b', newId: 'z', name: 'Bo', now: 2000 }).playerId, 'b');
+  const lobby = seatPlayer({ status: 'lobby', players: {} }, { newId: 'z', name: 'Zed', now: 0 }).room;
+  assert.deepEqual(lobby.players.z, { name: 'Zed', ready: false, points: 0, categoriesSubmitted: false });
 });

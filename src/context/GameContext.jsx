@@ -3,7 +3,7 @@ import { ref, set, onValue, update, runTransaction, onDisconnect, serverTimestam
 import { db } from '../firebase';
 import { shuffle } from '../utils';
 import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, PREDICTION_DUELS, PRE_PLAY_PHASES, availableMinigames } from '../gameConfig';
-import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent } from '../lib/session';
+import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent, seatPlayer } from '../lib/session';
 import { requestContent } from '../lib/content';
 import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
@@ -100,18 +100,19 @@ export function GameProvider({ children }) {
     const stored = identityStorage.getItem(`payopoly_${id}`);
     const newId = generateId();
     let playerId = newId;
+    let failure = null;
     const result = await runTransaction(ref(db, `games/${id}`), room => {
       if (!room) return room;
-      if (stored && room.players?.[stored]) { playerId = stored; return room; }
-      playerId = newId;
-      if (room.status !== 'lobby') return undefined;
-      room.players ??= {};
-      room.players[playerId] = { name: playerName, ready: false, points: 0, categoriesSubmitted: false };
-      return room;
+      const seat = seatPlayer(room, { storedId: stored, newId, name: playerName, now: now() });
+      failure = seat.error ?? null;
+      if (failure) return undefined;
+      playerId = seat.playerId;
+      return seat.room;
     }, { applyLocally: false });
     const room = result.snapshot.val();
     if (!room) { setError('gameNotFound'); throw new Error('gameNotFound'); }
-    if (!result.committed || !room.players?.[playerId]) { setError('gameStarted'); throw new Error('gameStarted'); }
+    if (failure) { setError(failure); throw new Error(failure); }
+    if (!result.committed || !room.players?.[playerId]) { setError('connectionError'); throw new Error('connectionError'); }
     identityStorage.setItem(`payopoly_${id}`, playerId);
     identityStorage.setItem('payopoly_resume', JSON.stringify({ gameId: id, playerId }));
     setGameId(id); setMyPlayerId(playerId);
