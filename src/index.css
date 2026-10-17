@@ -1180,3 +1180,15 @@ label { font-size: 14px; font-weight: 650; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
 
 .payout-summary { margin: 12px 16px; width: auto; }
+
+/* Petit Bac: editable categories and anonymous sets use the same word order. */
+.bac-category-list { display: grid; gap: 0.75rem; }
+.bac-category-entry .btn { width: 100%; display: flex; justify-content: space-between; gap: 1rem; text-align: left; }
+.bac-category-entry .btn span { overflow-wrap: anywhere; font-weight: normal; }
+.bac-category-entry .input { width: 100%; margin-top: 0.5rem; }
+.bac-sets { display: grid; gap: 1rem; width: 100%; }
+.bac-set { min-width: 0; }
+.bac-set h2 { font-size: 1.2rem; }
+.bac-answer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.bac-answer dt { font-weight: bold; }
+.bac-answer dd { margin: 0; overflow-wrap: anywhere; }

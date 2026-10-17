@@ -169,7 +169,7 @@ export default function MotInterdit() {
           />
         </div>
 
-        {isTPlayer && mg.forbiddenWords?.length > 0 && (
+        {mg.forbiddenWords?.length > 0 && (
           <div className="taboo-list" style={{ justifyContent: 'center' }}>
             {mg.forbiddenWords.map(w => <span key={w} className="taboo-chip taboo-chip-live">{w}</span>)}
           </div>

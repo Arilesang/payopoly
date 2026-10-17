@@ -29,8 +29,8 @@ export const MINIGAME_RULES = [
         en: 'A slot machine pulls a random letter.',
       },
       {
-        fr: '30 secondes pour citer à voix haute un mot commençant par cette lettre dans chacune des 7 catégories affichées.',
-        en: '30 seconds to say out loud a word starting with that letter for each of the 7 categories shown.',
+        fr: '30 secondes : clique sur chaque catégorie et écris un mot commençant par la lettre tirée. Les spectateurs voient tes réponses en direct.',
+        en: '30 seconds: click each category and type a word starting with the selected letter. Spectators see your answers live.',
       },
       {
         fr: 'Les autres joueurs votent : réussi ou raté ?',
@@ -92,8 +92,8 @@ export const MINIGAME_RULES = [
     name: 'Petit Bac',
     timer: '30 s',
     tagline: {
-      fr: 'Deux joueurs, la même lettre, sept catégories. Le public tranche.',
-      en: 'Two players, one letter, seven categories. The room decides.',
+      fr: 'Deux joueurs, la même lettre, sept catégories. Vote anonyme.',
+      en: 'Two players, one letter, seven categories. An anonymous vote.',
     },
     steps: [
       {
@@ -105,12 +105,12 @@ export const MINIGAME_RULES = [
         en: 'A letter is drawn. Both duellists mark themselves ready.',
       },
       {
-        fr: '30 secondes : chacun remplit les 7 catégories à voix haute avec cette lettre.',
-        en: '30 seconds: each fills the 7 categories out loud with that letter.',
+        fr: '30 secondes : chacun clique sur les catégories pour écrire ses mots. Les spectateurs voient les deux ensembles anonymes en direct.',
+        en: '30 seconds: each player clicks the categories to type their words. Spectators see both anonymous sets live.',
       },
       {
-        fr: 'Les spectateurs votent pour celui qui s’en est le mieux tiré.',
-        en: 'The spectators vote for whoever did it better.',
+        fr: 'Tout le monde vote pour le meilleur ensemble anonyme de réponses, sauf le sien. Les auteurs sont révélés au résultat.',
+        en: 'Everyone votes for the best anonymous set of answers, except their own. Authors are revealed with the results.',
       },
     ],
     scoring: {
@@ -118,8 +118,8 @@ export const MINIGAME_RULES = [
       en: 'The duellist with the most votes takes the die’s points.',
     },
     tip: {
-      fr: 'Il faut au moins un spectateur pour départager — d’où les 3 joueurs minimum.',
-      en: 'Someone has to break the tie, which is why this one needs 3 players.',
+      fr: 'Tu peux modifier tes mots jusqu’à la fin du chrono. Tu ne vois pas les réponses de ton adversaire pendant la saisie.',
+      en: 'You can edit your words until time runs out. Your opponent’s answers stay hidden from you while typing.',
     },
   },
   {

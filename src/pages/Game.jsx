@@ -200,10 +200,13 @@ export default function Game() {
               onSelectType={selectMinigameType}
               onSpinResult={selectMinigame}
               onSelectOpponent={selectOpponent}
+              isActor
             />
           ) : (
+            turn?.phase === 'spinning' ? <TurnPanel key={`${turn.id}:${turn.phase}`} turn={turn} players={players} myPlayerId={myPlayerId} t={t} onSpinResult={selectMinigame} isActor={false} /> :
             <div className="waiting-turn card">
               <p className="muted">{t('game.waitingForTurn')} <strong>{currentPlayer?.name}</strong></p>
+              {turn?.minigame && <p>{turn.minigame}</p>}
             </div>
           )}
         </div>
@@ -226,8 +229,8 @@ export default function Game() {
 }
 
 // ── Sub-component: current player's turn panel ──────────────────
-function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, onSelectOpponent }) {
-  const { game } = useGame();
+function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, onSelectOpponent, isActor }) {
+  const { game, startWheelSpin } = useGame();
   const [devPick, setDevPick] = useState(null);
   const devMode = game?.devMode ?? false;
 
@@ -255,9 +258,9 @@ function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, o
     const devGames = [...new Set(games)];
     return (
       <div className="card turn-card">
-        <p className="turn-label">{t('game.yourTurn')}</p>
-        <p className="turn-prompt">{t('game.spinPrompt')}</p>
-        {devMode && (
+        <p className="turn-label">{isActor ? t('game.yourTurn') : players[turn.playerId]?.name}</p>
+        {isActor && <p className="turn-prompt">{t('game.spinPrompt')}</p>}
+        {devMode && isActor && (
           <div style={{ marginBottom: '0.75rem' }}>
             <p className="label" style={{ marginBottom: '0.4rem' }}>⚙️ {t('game.devPickMinigame')}</p>
             <div className="type-btns">
@@ -279,7 +282,10 @@ function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, o
           t={t}
           forcedResult={devMode ? devPick : null}
           disabled={devMode && !devPick}
-          autoSpin={game.settings?.preset === 'quick' && !devMode}
+          autoSpin={game.settings?.preset === 'quick' && !devMode && isActor}
+          sharedSpin={turn.wheelSpin}
+          onStart={(value, duration) => startWheelSpin(games, value, duration)}
+          isActor={isActor}
         />
       </div>
     );

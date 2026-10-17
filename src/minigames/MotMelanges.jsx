@@ -140,12 +140,10 @@ export default function MotMelanges() {
         <p className="muted" style={{ textAlign: 'center' }}>
           {Object.keys(mg.votes ?? {}).length}/{spectatorIds.length} votes
         </p>
-        {isTPlayer && (
-          <div className="card" style={{ textAlign: 'center', marginTop: 8 }}>
-            <p className="label">{tr("Réponse")}</p>
-            <p style={{ fontWeight: 700, fontSize: 20 }}>{mg.originalWord}</p>
-          </div>
-        )}
+        <div className="card" style={{ textAlign: 'center', marginTop: 8 }}>
+          <p className="label">{tr("Réponse")}</p>
+          <p style={{ fontWeight: 700, fontSize: 20 }}>{mg.originalWord}</p>
+        </div>
       </div>
     );
   }

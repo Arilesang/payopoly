@@ -6,6 +6,8 @@ import { useLang } from '../context/LangContext';
 import RoundScoreSummary from '../components/RoundScoreSummary';
 import ScoreSheet from '../components/ScoreSheet';
 import RoundIntro from '../components/RoundIntro';
+import DiceRoll from '../components/DiceRoll';
+import MgHeader from '../components/MgHeader';
 import SessionControls from '../components/SessionControls';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
 import { useState } from 'react';
@@ -49,7 +51,7 @@ export default function MinigameRouter() {
   // isController reads from currentTurn.playerId (always set).
   // isTPlayer reads from currentMinigame.tPlayerId (only set AFTER initMinigame runs).
   // We must use isController here — isTPlayer is false until initMinigame completes.
-  const { game, loadGame, initMinigame, isController } = useGame();
+  const { game, loadGame, initMinigame, isController, isTPlayer } = useGame();
   const navigate = useNavigate();
   const { say } = useLang();
   const [help, setHelp] = useState(false);
@@ -93,7 +95,13 @@ export default function MinigameRouter() {
     <ScoreSheet />
     <button className="btn btn-small btn-ghost round-help" onClick={() => setHelp(true)}>{say('Règles et aide', 'Rules and help')}</button>
     {mg.fallback && <p className="connection-banner" role="status">{say('Contenu de secours · thème général', 'Backup content · general theme')}</p>}
-    {mg.phase === 'rules' ? <RoundIntro /> : <Component key={mg.id} />}
+    {mg.diceValue && mg.phase !== 'dice' && <p className="round-note" role="status">🎲 {mg.diceValue} {tr('points')}</p>}
+    {mg.phase === 'rules' ? <RoundIntro /> : mg.phase === 'dice' && !isTPlayer ? (
+      <div className="page page-minigame page-center">
+        <MgHeader title={tr(mg.name)} subtitle={game.players?.[mg.tPlayerId]?.name} />
+        <DiceRoll />
+      </div>
+    ) : <Component key={mg.id} />}
     {['complete', 'results'].includes(mg.phase) && <RoundScoreSummary />}
     {['complete', 'results'].includes(mg.phase) && <p className="round-note">{mg.winnerIds?.length > 1 ? say('Égalité : les points sont partagés.', 'Tie: points are shared.') : mg.name === 'Trivia' && !mg.winnerId ? say('Aucune bonne réponse : aucun point attribué.', 'No correct answers: no points awarded.') : ''}{say(' Le tour suivant commence automatiquement après 30 secondes.', ' The next turn starts automatically after 30 seconds.')}</p>}
     {help && <MinigameRulesPopup initialId={key} onClose={() => setHelp(false)} />}

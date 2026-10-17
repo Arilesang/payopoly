@@ -1,3 +1,4 @@
+import { now as sharedNow } from '../lib/clock';
 import { useText } from '../context/useText';
 import { useLang } from '../context/LangContext';
 import { useRef, useEffect, useState } from 'react';
@@ -8,7 +9,7 @@ const COLORS = [
 const INK = '#582b2d';
 const PAPER = '#fff1d9';
 
-export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false, autoSpin = false }) {
+export default function SpinWheel({ items, onResult, t, forcedResult = null, disabled = false, autoSpin = false, sharedSpin, onStart, isActor = true }) {
   const tr = useText();
   const { lang } = useLang();
   const spinStartedRef = useRef(false);
@@ -24,12 +25,12 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
   }, [items, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (autoSpin) spin();
+    if (autoSpin && !sharedSpin) spin();
     return () => {
       cancelAnimationFrame(animationRef.current);
       spinStartedRef.current = false;
     };
-  }, [autoSpin]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoSpin, sharedSpin?.startedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function drawWheel(angle) {
     const canvas = canvasRef.current;
@@ -114,8 +115,15 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     spinStartedRef.current = true;
     setSpinning(true);
 
-    const forcedIndex = forcedResult !== null ? items.indexOf(forcedResult) : -1;
-    const winIndex = forcedIndex >= 0 ? forcedIndex : Math.floor(Math.random() * items.length);
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : autoSpin ? 1600 : 4000;
+    onStart(forcedResult, duration);
+  }
+
+  useEffect(() => {
+    if (!sharedSpin) return;
+    const winIndex = items.indexOf(sharedSpin.value);
+    if (winIndex < 0) return;
+    let completionTimer;
     const slice = (2 * Math.PI) / items.length;
 
     // Pointer is at top (-PI/2). Calculate rotation so winIndex lands there.
@@ -125,15 +133,16 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
     let delta = target - current;
     while (delta < 0) delta += 2 * Math.PI;
 
-    const extraSpins = (5 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
+    const extraSpins = 6 * 2 * Math.PI;
     const totalRotation = extraSpins + delta;
 
-    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : autoSpin ? 1600 : 4000;
-    const startTime = performance.now();
+    const duration = sharedSpin.duration;
+    const startTime = sharedSpin.startedAt;
     const startAngle = angleRef.current;
 
-    function animate(now) {
-      const elapsed = now - startTime;
+    function animate() {
+      setSpinning(true);
+      const elapsed = Math.max(0, sharedNow() - startTime);
       const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 4); // quartic ease-out
       const angle = startAngle + totalRotation * eased;
@@ -146,12 +155,13 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
         setSpinning(false);
         setDone(true);
         setResult(items[winIndex]);
-        onResult(items[winIndex]);
+        if (isActor) completionTimer = setTimeout(() => onResult(items[winIndex]), Math.max(0, startTime + duration + 600 - sharedNow()));
       }
     }
 
     animationRef.current = requestAnimationFrame(animate);
-  }
+    return () => { cancelAnimationFrame(animationRef.current); clearTimeout(completionTimer); };
+  }, [sharedSpin?.startedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="spin-wheel-container">
@@ -159,13 +169,13 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
         <canvas ref={canvasRef} width={280} height={280} className="wheel-canvas" role="img" aria-label={items.map(item => tr(item)).join(', ')} />
       </div>
       {result && <p className="wheel-result" aria-live="polite">{tr(result)}</p>}
-      <button
+      {isActor && <button
         className="btn btn-accent"
         onClick={spin}
         disabled={spinning || done || disabled}
       >
         {spinning ? t('game.spinning') : t('game.spin')}
-      </button>
+      </button>}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scor
 import { requestContent } from '../lib/content';
 import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
+import { writePetitBacWord, validPetitBacVote, petitBacResult } from '../lib/petitBac';
 
 const GameContext = createContext();
 
@@ -247,6 +248,26 @@ export function GameProvider({ children }) {
     await updateTurn('choose_opponent', { opponentId, phase: 'playing' });
   }
 
+  // Public random events are chosen once and replayed from the shared clock.
+  async function startWheelSpin(items, forcedResult = null, duration = 4000) {
+    const turnId = game.currentTurn?.id;
+    const value = items.includes(forcedResult) ? forcedResult : items[Math.floor(Math.random() * items.length)];
+    if (!value) return;
+    await runTransaction(ref(db, `games/${gameId}/currentTurn`), turn => {
+      if (!turn || turn.id !== turnId || turn.phase !== 'spinning' || turn.playerId !== myPlayerId || turn.wheelSpin) return undefined;
+      return { ...turn, wheelSpin: { value, startedAt: now(), duration } };
+    }, { applyLocally: false });
+  }
+
+  async function startDiceRoll() {
+    const mgId = game.currentMinigame?.id;
+    const value = Math.floor(Math.random() * 6) + 1;
+    await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
+      if (!current || current.id !== mgId || current.phase !== 'dice' || current.tPlayerId !== myPlayerId || current.diceRoll) return undefined;
+      return { ...current, diceRoll: { value, startedAt: now() } };
+    }, { applyLocally: false });
+  }
+
   // ── Minigame state ───────────────────────────────────────────────────────
   // Called once when the minigame page loads (by TPlayer only)
   async function initMinigame() {
@@ -373,9 +394,28 @@ export function GameProvider({ children }) {
     }, { applyLocally: false });
   }
 
-  // Cast a vote — spectators only; choice is 'yes'/'no' or a playerId
+  // Cast a vote; Petit Bac duellists can vote for the opposing set.
   async function castVote(choice) {
+    if (game.currentMinigame?.name === 'Petit Bac') {
+      const mgId = game.currentMinigame.id;
+      await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
+        if (!current || current.id !== mgId || current.phase !== 'voting' || current.votes?.[myPlayerId] !== undefined
+          || now() >= (current.voteDeadline ?? current.phaseStartedAt + 25000)
+          || !validPetitBacVote({ ...game, currentMinigame: current }, myPlayerId, choice)) return undefined;
+        return { ...current, votes: { ...current.votes, [myPlayerId]: choice } };
+      }, { applyLocally: false });
+      return;
+    }
     await setMyEntry('votes', choice);
+  }
+
+  async function savePetitBacWord(categoryIndex, word) {
+    const mgId = game.currentMinigame?.id;
+    const result = await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
+      if (current?.id !== mgId) return undefined;
+      return writePetitBacWord(current, myPlayerId, categoryIndex, word, now());
+    }, { applyLocally: false });
+    return result.committed;
   }
 
   // ── Generic per-player writers ───────────────────────────────────────────
@@ -530,6 +570,10 @@ export function GameProvider({ children }) {
       return;
     }
     if (mg.phase === 'voting' && tick >= (mg.voteDeadline ?? mg.phaseStartedAt + 25000)) {
+      if (mg.name === 'Petit Bac') {
+        updateMinigame(petitBacResult(game)).catch(() => setError('connectionError'));
+        return;
+      }
       const winners = tiedLeaders(mg.votes);
       const yes = Object.values(mg.votes ?? {}).filter(v => v === 'yes').length;
       const no = Object.values(mg.votes ?? {}).filter(v => v === 'no').length;
@@ -582,9 +626,9 @@ export function GameProvider({ children }) {
       normalizedAwards: awards => cleanAwards(game, awards),
       toggleDevMode, adjustPoints,
       submitCategory, finishCategorySubmission,
-      selectMinigameType, selectMinigame, selectOpponent,
+      selectMinigameType, selectMinigame, selectOpponent, startWheelSpin, startDiceRoll,
       initMinigame, updateMinigame, setMinigameReady,
-      submitTriviaAnswer, castVote, completeMinigame,
+      submitTriviaAnswer, castVote, completeMinigame, savePetitBacWord,
       setMyEntry, pushEntry, closeVoting,
       pushDrawingStroke, updateCurrentStroke, clearDrawing,
       pushMyStroke, updateMyCurrentStroke, clearMyDrawing,

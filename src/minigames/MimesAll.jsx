@@ -88,7 +88,10 @@ export default function MimesAll() {
             {myReady && <p className="muted">{tr("Préparation...")}</p>}
           </>
         ) : (
-          <p className="muted" style={{ textAlign: 'center' }}>{tr("Le joueur prend connaissance de sa catégorie...")}</p>
+          <div className="card">
+            <p className="mg-category">{mg.category}</p>
+            <p className="muted">{tr("Le joueur prend connaissance de sa catégorie...")}</p>
+          </div>
         )}
       </div>
     );
@@ -98,7 +101,7 @@ export default function MimesAll() {
   if (mg.phase === 'playing') {
     return (
       <div className="page page-minigame page-center">
-        <MgHeader title={tr("Mimes")} subtitle={isTPlayer ? `${mg.category} — ${mg.mimeWord ?? '...'}` : tr("🙊 Catégorie cachée")} />
+        <MgHeader title={tr("Mimes")} subtitle={isTPlayer ? `${mg.category} — ${mg.mimeWord ?? '...'}` : mg.category} />
         <Countdown startedAt={mg.countdownStartedAt} />
         {isTPlayer && (
           <button className="btn btn-primary" onClick={() => updateMinigame({ phase: 'voting' })}> {tr("Temps écoulé → Voter")} </button>
@@ -112,6 +115,10 @@ export default function MimesAll() {
     return (
       <div className="page page-minigame">
         <MgHeader title="Vote" subtitle={tr("{0} a-t-il/elle réussi le mime ?", [tName])} />
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p className="label">{tr("Le mot était")}</p>
+          <p className="mg-category">{mg.mimeWord}</p>
+        </div>
         <div className="vote-yesno">
           {['yes', 'no'].map(choice => {
             const myVote = mg.votes?.[myPlayerId];
