@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "node tests/browser.mjs",
+    "test:visibility": "node tests/visibility.browser.mjs",
+    "test:petit-bac": "node tests/petit-bac.browser.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

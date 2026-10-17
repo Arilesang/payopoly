@@ -25,7 +25,7 @@ export const MINIGAMES = {
 // works, and the only thing that raises the floor above two is needing a
 // spectator to vote, since a duel with nobody watching can never resolve.
 export const MINIGAME_META = {
-  'duel:Petit Bac':      { kind: 'duel',     minPlayers: 3 },  // spectators vote
+  'duel:Petit Bac':      { kind: 'duel',     minPlayers: 3 },  // anonymous voting; no self-votes
   'duel:Trivia':         { kind: 'duel',     minPlayers: 2 },
   'duel:Punchline':      { kind: 'duel',     minPlayers: 3 },  // spectators vote
   'duel:Rimes Rapides':  { kind: 'duel',     minPlayers: 2 },

@@ -39,6 +39,7 @@ try {
   await page.getByRole('button', { name: 'Start game', exact: true }).click();
   await expectText('Preparation Phase');
   await page.getByRole('button', { name: 'Use suggested categories', exact: true }).click();
+  await until(async () => (await state()).games[code].players[hostId].categoriesSubmitted);
   await patchRoom(r => { r.players.guest.categoriesSubmitted = true; });
   await until(async()=> (await state()).games[code].status === 'play');
   await patchRoom(r => { r.currentTurn.playerId=hostId; r.playerOrder=[hostId,'guest']; });
@@ -157,7 +158,7 @@ try {
     r.status='play';r.turnsPlayed=0;r.totalTurns=6;r.settings.preset='classic';r.sessionId='checks';r.playerOrder=[hostId,'guest','spectator','spectator2'];r.initialPlayerCount=4;
     r.players[hostId].points=0;r.players.guest.points=0;
     r.currentTurn={id:'vote:tie',playerId:hostId,phase:'playing',minigameType:'duel',minigame:'Petit Bac',startedAt:Date.now()};
-    r.currentMinigame={id:'vote:tie',type:'duel',name:'Petit Bac',tPlayerId:hostId,pPlayerId:'guest',phase:'voting',phaseStartedAt:Date.now(),diceValue:4,pointsValue:4,votes:{spectator:hostId,spectator2:'guest'}};
+    r.currentMinigame={id:'vote:tie',type:'duel',name:'Petit Bac',tPlayerId:hostId,pPlayerId:'guest',phase:'voting',phaseStartedAt:Date.now(),diceValue:4,pointsValue:4,votes:{[hostId]:'guest',guest:hostId,spectator:hostId,spectator2:'guest'}};
   });
   await page.goto(`${origin}/game/${code}/minigame`);
   await expectText('Tie: points are shared.');
