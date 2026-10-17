@@ -216,5 +216,10 @@ export default {
   "choisit deux catégories...": "is choosing two categories...",
   "{0} te propose : choisis la catégorie": "{0} offers you: choose the category",
   "{0} propose {1} ou {2} — {3} choisit...": "{0} offers {1} or {2} — {3} is choosing...",
-  "{0} commence.": "{0} goes first."
+  "{0} commence.": "{0} goes first.",
+  "J'ai fini": "I'm done",
+  "Terminer le dessin ?": "Finish the drawing?",
+  "Le chrono s'arrête et le groupe passe directement au vote.": "The timer stops and the room goes straight to the vote.",
+  "Oui, terminer": "Yes, finish",
+  "Continuer à dessiner": "Keep drawing"
 };

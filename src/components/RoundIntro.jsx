@@ -5,6 +5,7 @@ import { MINIGAME_RULES } from '../data/minigameRules';
 import { ROUND_EXAMPLES } from '../data/roundExamples';
 import { scoringRule } from '../lib/rules';
 import { FaceOff } from './DuelStage';
+import { rulesReadyIds } from '../lib/session';
 export default function RoundIntro() {
   const tr = useText();
   const { game, myPlayerId, setMyEntry } = useGame();
@@ -16,6 +17,9 @@ export default function RoundIntro() {
   const opponent = mg.pPlayerId === myPlayerId;
   const simultaneous = ['Trivia', 'Sondage Éclair', 'Bluff', 'Qui a écrit ça', 'Croquis Croisés'].includes(mg.name) && mg.type === 'all';
   const ready = mg.rulesReady?.[myPlayerId];
+  const askedIds = rulesReadyIds(game);
+  const asked = askedIds.includes(myPlayerId);
+  const readyCount = askedIds.filter(id => mg.rulesReady?.[id]).length;
   return <section className="page page-center">
     <h1>{rule?.emoji} {tr(rule?.name ?? mg.name)}</h1>
     <p className="role-badge">{simultaneous ? say('Tu joues avec tout le monde', 'You play with everyone') : performer ? say('Tu es le joueur principal', 'You are the lead player') : opponent ? say('Tu es l’adversaire', 'You are the opponent') : say('Tu observes, devines ou votes', 'You watch, guess or vote')}</p>
@@ -25,7 +29,9 @@ export default function RoundIntro() {
       <p><strong>{say('Exemple : ', 'Example: ')}</strong>{ROUND_EXAMPLES[key]?.[lang === 'en' ? 1 : 0]}</p>
       <p className="muted">{scoringRule(key, lang)}</p>
     </div>
-    <button className="btn btn-success" disabled={ready} onClick={() => setMyEntry('rulesReady', true)}>{ready ? say('Prêt · en attente du groupe', 'Ready · waiting for the group') : say('J’ai compris · prêt !', 'Got it · ready!')}</button>
-    <p className="muted">{Object.keys(mg.rulesReady ?? {}).length}/{Object.keys(game.players).length} {say('prêts · démarrage après 20 secondes', 'ready · starts after 20 seconds')}</p>
+    {asked
+      ? <button className="btn btn-success" disabled={ready} onClick={() => setMyEntry('rulesReady', true)}>{ready ? say('Prêt · en attente du groupe', 'Ready · waiting for the group') : say('J’ai compris · prêt !', 'Got it · ready!')}</button>
+      : <p className="muted">{say(`En attente de ${game.players[mg.tPlayerId]?.name ?? ''}…`, `Waiting for ${game.players[mg.tPlayerId]?.name ?? ''}…`)}</p>}
+    <p className="muted">{readyCount}/{askedIds.length} {say('prêts · démarrage après 20 secondes', 'ready · starts after 20 seconds')}</p>
   </section>;
 }

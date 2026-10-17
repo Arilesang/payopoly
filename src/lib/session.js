@@ -14,6 +14,12 @@ export function controllerId(room, now) {
   const turnId = room.currentTurn?.playerId;
   return online.includes(turnId) ? turnId : online.includes(room.hostId) ? room.hostId : online.sort()[0];
 }
+// Who must confirm the rules screen. A solo round only waits on its player;
+// everyone else just watches, so asking them to be ready would stall it.
+export function rulesReadyIds(room, mg = room.currentMinigame) {
+  if (mg?.type === 'solo' && mg.tPlayerId) return [mg.tPlayerId];
+  return Object.keys(room.players ?? {});
+}
 export function wheelGames(room, type) {
   let names = availableMinigames(type, Object.keys(room.players ?? {}).length);
   if (room.settings?.preset === 'quick' && type === 'all') {

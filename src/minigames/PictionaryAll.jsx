@@ -23,6 +23,7 @@ export default function PictionaryAll() {
   const myCategories = game?.players?.[myPlayerId]?.categories ?? [];
 
   const [selecting, setSelecting] = useState(false);
+  const [confirmFinish, setConfirmFinish] = useState(false);
 
   // TPlayer: auto-advance to voting when 60s expire (via Countdown onExpire)
   // Handled inline in JSX with onExpire prop
@@ -129,6 +130,7 @@ export default function PictionaryAll() {
 
   // ── PLAYING ───────────────────────────────────────────────────────────────
   if (mg.phase === 'playing') {
+    const endDrawing = () => updateMinigame({ phase: 'voting', wordRevealed: true, currentStroke: null });
     return (
       <div className="page page-pictionary">
         <div className="pictionary-header">
@@ -139,9 +141,7 @@ export default function PictionaryAll() {
           <Countdown
             startedAt={mg.countdownStartedAt}
             total={60}
-            onExpire={() => {
-              if (isController) updateMinigame({ phase: 'voting', wordRevealed: true, currentStroke: null });
-            }}
+            onExpire={() => { if (isController) endDrawing(); }}
           />
         </div>
         <DrawingCanvas
@@ -152,6 +152,18 @@ export default function PictionaryAll() {
           onStrokeUpdate={stroke => updateCurrentStroke(stroke)}
           onClear={clearDrawing}
         />
+        {/* The artist can call it early once the room has the word. */}
+        {isTPlayer && (
+          <button className="btn btn-ghost" onClick={() => setConfirmFinish(true)}>{tr("J'ai fini")}</button>
+        )}
+        {isTPlayer && confirmFinish && (
+          <div className="overlay"><div className="card modal" role="dialog" aria-modal="true" aria-labelledby="finish-title">
+            <h2 id="finish-title">{tr("Terminer le dessin ?")}</h2>
+            <p>{tr("Le chrono s'arrête et le groupe passe directement au vote.")}</p>
+            <button className="btn btn-primary" onClick={() => { setConfirmFinish(false); endDrawing(); }}>{tr("Oui, terminer")}</button>
+            <button className="btn btn-ghost" onClick={() => setConfirmFinish(false)}>{tr("Continuer à dessiner")}</button>
+          </div></div>
+        )}
       </div>
     );
   }

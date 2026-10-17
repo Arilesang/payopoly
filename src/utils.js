@@ -24,6 +24,12 @@ export function normalize(str) {
     .replace(/^(LE|LA|LES|UN|UNE|DES|DU|DE|L)\s+/, '');
 }
 
+// Typed answers in games where the AI holds the answer are shown in capitals,
+// so a player's entry and the AI's never differ by case alone.
+export function caps(str) {
+  return (str ?? '').toLocaleUpperCase('fr-FR');
+}
+
 // Damerau-Levenshtein (optimal string alignment) — an adjacent transposition
 // costs 1, not 2, because "canrad" for "canard" is the typo people actually make.
 export function levenshtein(a, b) {

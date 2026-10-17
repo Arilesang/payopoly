@@ -8,7 +8,7 @@ import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import MgHeader, { Waiting, TallyLine } from '../components/MgHeader';
-import { shuffle, normalize } from '../utils';
+import { shuffle, normalize, caps } from '../utils';
 
 const WRITE_SECONDS = 45;
 const PICK_SECONDS  = 30;
@@ -32,11 +32,11 @@ function buildOptions(submissions, trueAnswer) {
     if (!key) return;
     if (key === truthKey) { truthMatchers.push(playerId); return; }
     if (byText.has(key)) byText.get(key).authorIds.push(playerId);
-    else byText.set(key, { text, authorIds: [playerId] });
+    else byText.set(key, { text: caps(text), authorIds: [playerId] });
   });
 
   const options = shuffle([
-    { id: TRUTH_ID, text: trueAnswer, authorIds: null },
+    { id: TRUTH_ID, text: caps(trueAnswer), authorIds: null },
     ...[...byText.values()].map((o, i) => ({ id: `fake${i}`, text: o.text, authorIds: o.authorIds })),
   ]);
 
@@ -225,7 +225,7 @@ export default function Bluff() {
               className="input"
               placeholder={tr("Ta fausse réponse...")}
               value={draft}
-              onChange={e => setDraft(e.target.value)}
+              onChange={e => setDraft(caps(e.target.value))}
               onKeyDown={e => e.key === 'Enter' && draft.trim() && setMyEntry('submissions', draft.trim())}
               maxLength={60}
               autoFocus
@@ -308,7 +308,7 @@ export default function Bluff() {
 
         <div className="result-banner card" style={{ textAlign: 'center' }}>
           <p className="label">{tr("La vérité était")}</p>
-          <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.trueAnswer}</p>
+          <p className="mg-category" style={{ color: 'var(--accent)' }}>{caps(mg.trueAnswer)}</p>
         </div>
 
         <div className="card">

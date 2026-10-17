@@ -3,12 +3,14 @@ import { useText } from '../context/useText';
 // The turn player describes a word out loud without saying five forbidden ones.
 // Everyone else races to type it. First correct guess ends the round — no vote.
 // Phases: dice → category_select → word_reveal → playing → complete
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import MgHeader, { Waiting } from '../components/MgHeader';
-import { isMatch } from '../utils';
+import { isMatch, caps } from '../utils';
+import { now } from '../lib/clock';
+import { useFeedScroll } from '../lib/useFeedScroll';
 
 const ROUND_SECONDS = 90;
 
@@ -23,31 +25,28 @@ export default function MotInterdit() {
 
   const [selecting, setSelecting] = useState(false);
   const [draft, setDraft] = useState('');
-  const feedRef = useRef(null);
 
   // Guesses arrive as a push-keyed map; the feed wants them oldest-first.
   const guesses = Object.entries(mg?.guesses ?? {})
     .map(([key, g]) => ({ key, ...g }))
     .sort((a, b) => (a.at ?? 0) - (b.at ?? 0));
+  const [feedRef, anchorRef] = useFeedScroll(guesses.length);
 
   // ── TPlayer judges: only they hold the word, so only they can score it ───
   useEffect(() => {
     if (mg?.phase !== 'playing' || !isController || !mg.tabooWord || mg.foundBy) return;
     const hit = guesses.find(g => isMatch(g.text, mg.tabooWord));
     if (!hit) return;
-    updateMinigame({ foundBy: hit.playerId, foundAt: hit.at ?? Date.now(), phase: 'complete' });
+    updateMinigame({ foundBy: hit.playerId, foundAt: hit.at ?? now(), phase: 'complete' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mg?.guesses, mg?.phase, isController]);
 
-  useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
-  }, [guesses.length]);
-
   function submitGuess() {
-    const text = draft.trim();
+    const text = caps(draft.trim());
     if (!text) return;
     setDraft('');
-    pushEntry('guesses', { playerId: myPlayerId, text, at: Date.now() });
+    // The synced clock, not this phone's: feed order must agree across devices.
+    pushEntry('guesses', { playerId: myPlayerId, text, at: now() });
   }
 
   if (!mg) return <div className="page page-center"><div className="spinner" /></div>;
@@ -169,7 +168,7 @@ export default function MotInterdit() {
           />
         </div>
 
-        {mg.forbiddenWords?.length > 0 && (
+        {isTPlayer && mg.forbiddenWords?.length > 0 && (
           <div className="taboo-list" style={{ justifyContent: 'center' }}>
             {mg.forbiddenWords.map(w => <span key={w} className="taboo-chip taboo-chip-live">{w}</span>)}
           </div>
@@ -184,18 +183,18 @@ export default function MotInterdit() {
           {guesses.map(g => (
             <div key={g.key} className="guess-line">
               <span className="guess-author">{players[g.playerId]?.name}</span>
-              <span className="guess-text">{g.text}</span>
+              <span className="guess-text">{caps(g.text)}</span>
             </div>
           ))}
         </div>
 
         {!isTPlayer && (
-          <div className="guess-input-row">
+          <div className="guess-input-row" ref={anchorRef}>
             <input
               className="input"
               placeholder={tr("Ta réponse...")}
               value={draft}
-              onChange={e => setDraft(e.target.value)}
+              onChange={e => setDraft(caps(e.target.value))}
               onKeyDown={e => e.key === 'Enter' && submitGuess()}
               autoFocus
               autoComplete="off"

@@ -3,7 +3,7 @@ import { ref, set, get, onValue, update, runTransaction, onDisconnect, serverTim
 import { db } from '../firebase';
 import { shuffle } from '../utils';
 import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, PREDICTION_DUELS, PRE_PLAY_PHASES, availableMinigames } from '../gameConfig';
-import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent, seatPlayer, generateCode, codeVariants } from '../lib/session';
+import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, rulesReadyIds, isLeaderBounty, lastDuelOpponent, seatPlayer, generateCode, codeVariants } from '../lib/session';
 import { requestContent } from '../lib/content';
 import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
@@ -566,7 +566,7 @@ export function GameProvider({ children }) {
       if (tick - game.currentTurn.startedAt > 90000) skipTurn().catch(() => setError('connectionError'));
       return;
     }
-    if (mg.phase === 'rules' && (Object.keys(mg.rulesReady ?? {}).length >= Object.keys(game.players).length || tick - mg.phaseStartedAt >= 20000)) {
+    if (mg.phase === 'rules' && (rulesReadyIds(game).every(id => mg.rulesReady?.[id]) || tick - mg.phaseStartedAt >= 20000)) {
       updateMinigame({ phase: 'dice', ...(game.settings?.preset === 'quick' ? { readyPlayers: mg.rulesReady ?? {} } : {}) }).catch(() => setError('connectionError'));
       return;
     }

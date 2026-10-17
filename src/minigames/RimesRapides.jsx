@@ -4,11 +4,12 @@ import { now } from '../lib/clock';
 // Two players alternate typing rhymes against a shot clock that shortens every
 // exchange. First to time out, repeat, or miss loses.
 // Phases: dice → seed_reveal → playing → complete
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import MgHeader, { Waiting } from '../components/MgHeader';
-import { shuffle, normalize, matchesAny } from '../utils';
+import { shuffle, normalize, matchesAny, caps } from '../utils';
+import { useFeedScroll } from '../lib/useFeedScroll';
 import { roundAwards } from '../lib/session';
 
 const START_MS = 7000;
@@ -60,11 +61,11 @@ export default function RimesRapides() {
 
   const [draft, setDraft] = useState('');
   const [flash, setFlash] = useState(null);
-  const feedRef = useRef(null);
 
   const chain = Object.entries(mg?.chain ?? {})
     .map(([key, c]) => ({ key, ...c }))
     .sort((a, b) => (a.at ?? 0) - (b.at ?? 0));
+  const [feedRef, anchorRef] = useFeedScroll(chain.length);
 
   const amDuellist = isTPlayer || isPPlayer;
   const myTurn     = mg?.activePlayerId === myPlayerId;
@@ -85,10 +86,6 @@ export default function RimesRapides() {
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mg?.turnDeadline, mg?.phase, mg?.activePlayerId, isController]);
-
-  useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
-  }, [chain.length]);
 
   // The player who just answered writes the whole handover — word, next player
   // and next deadline — in one update. Bouncing it through the turn player's
@@ -217,12 +214,12 @@ export default function RimesRapides() {
         {flash && <p className="rime-flash">❌ {tr(flash)}</p>}
 
         {amDuellist && (
-          <div className="guess-input-row">
+          <div className="guess-input-row" ref={anchorRef}>
             <input
               className="input"
               placeholder={myTurn ? tr("Ta rime...") : tr("Attends ton tour")}
               value={draft}
-              onChange={e => setDraft(e.target.value)}
+              onChange={e => setDraft(caps(e.target.value))}
               onKeyDown={e => { if (e.key === "Enter") submit(now()); }}
               disabled={!myTurn}
               autoFocus

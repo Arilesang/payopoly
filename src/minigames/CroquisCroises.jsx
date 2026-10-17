@@ -9,7 +9,7 @@ import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import DrawingCanvas from '../components/DrawingCanvas';
 import MgHeader, { Waiting, TallyLine } from '../components/MgHeader';
-import { shuffle, normalize } from '../utils';
+import { shuffle, normalize, caps } from '../utils';
 
 const DRAW_SECONDS  = 60;
 const TITLE_SECONDS = 45;
@@ -79,11 +79,11 @@ export default function CroquisCroises() {
       // A fake that lands on the real word would put the truth in twice.
       if (!key || key === normalize(truth)) return;
       if (byText.has(key)) byText.get(key).authorIds.push(playerId);
-      else byText.set(key, { text, authorIds: [playerId] });
+      else byText.set(key, { text: caps(text), authorIds: [playerId] });
     });
 
     const opts = shuffle([
-      { id: TRUTH_ID, text: truth, authorIds: null },
+      { id: TRUTH_ID, text: caps(truth), authorIds: null },
       ...[...byText.values()].map((o, i) => ({ id: `f${i}`, text: o.text, authorIds: o.authorIds })),
     ]);
 
@@ -345,7 +345,7 @@ function TitleInput({ onSubmit }) {
         className="input"
         placeholder={tr("Ton faux titre...")}
         value={draft}
-        onChange={e => setDraft(e.target.value)}
+        onChange={e => setDraft(caps(e.target.value))}
         onKeyDown={e => e.key === 'Enter' && send()}
         maxLength={40}
         autoFocus

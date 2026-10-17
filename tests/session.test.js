@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent, seatPlayer, generateCode, codeVariants } from '../src/lib/session.js';
+import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent, seatPlayer, generateCode, codeVariants, rulesReadyIds } from '../src/lib/session.js';
 import { fallbackContent, validContent, requestContent } from '../src/lib/content.js';
 import { votesSettled, topVote } from '../src/utils.js';
 const room = () => ({ status: 'play', sessionId: 's', settings: { rounds: 1, scoring: 'dice' }, initialPlayerCount: 2,
@@ -172,4 +172,10 @@ test('room codes avoid look-alikes, and typed look-alikes still find older rooms
   assert.deepEqual(codeVariants('06BMD2'), ['06BMD2', 'O6BMD2']);
   assert.deepEqual(codeVariants('1X0'), ['1X0', '1XO', 'IX0', 'IXO', 'LX0', 'LXO']);
   assert.equal(codeVariants('000000').length, 64);
+});
+test('only the solo player is asked to confirm the rules', () => {
+  const r = room();
+  assert.deepEqual(rulesReadyIds(r, { type: 'solo', tPlayerId: 'a' }), ['a']);
+  assert.deepEqual(rulesReadyIds(r, { type: 'duel', tPlayerId: 'a', pPlayerId: 'b' }), ['a', 'b']);
+  assert.deepEqual(rulesReadyIds(r, { type: 'all', tPlayerId: 'a' }), ['a', 'b']);
 });
