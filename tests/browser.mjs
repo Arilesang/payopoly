@@ -77,6 +77,50 @@ try {
     assert.ok(!errors.length, `${type}:${name}: ${errors.join(',')}`);
     console.log(`PASS intro/dice/help: ${type}:${name}`);
   }
+  // Opponent picker shows standings, offers a leader bounty and blocks the last opponent.
+  await patchRoom(r => {
+    r.players[hostId].points = 0; r.players.guest.points = 5; r.players.spectator.points = 0; r.currentMinigame = null;
+    r.history = [{ turnId: 'old', key: 'duel:Trivia', playerId: hostId, awards: {}, duel: { ids: [hostId, 'spectator'], winnerId: hostId } }];
+    r.currentTurn = { id: 'duel:pick', playerId: hostId, phase: 'choose_opponent', minigameType: 'duel', minigame: 'Rimes Rapides', startedAt: Date.now() };
+  });
+  await page.goto(`${origin}/game/${code}`);
+  assert.equal(await page.getByRole('button', { name: /Spectator.*Last opponent/ }).isDisabled(), true);
+  await page.getByRole('button', { name: /Guest.*Leader bounty/ }).click();
+  await until(async () => (await state()).games[code].currentTurn.bounty === true);
+  await expectText('Leader bounty: if Host wins');
+  await expectText('First duel');
+  console.log('PASS opponent picker/bounty/face-off');
+  // A spectator predicts during the intro, reacts during play and is paid on the result.
+  await patchRoom(r => {
+    r.currentTurn = { id: 'duel:watch', playerId: 'guest', phase: 'playing', minigameType: 'duel', minigame: 'Rimes Rapides', opponentId: 'spectator', startedAt: Date.now() };
+    r.currentMinigame = { id: 'duel:watch', type: 'duel', name: 'Rimes Rapides', tPlayerId: 'guest', pPlayerId: 'spectator', phase: 'rules', phaseStartedAt: Date.now(), diceValue: 4, pointsValue: 4 };
+  });
+  await page.goto(`${origin}/game/${code}/minigame`);
+  await expectText('Your prediction: who wins?');
+  await page.locator('.duel-bet-row').getByRole('button', { name: 'Guest', exact: true }).click();
+  await until(async () => (await state()).games[code].currentMinigame.bets?.[hostId] === 'guest');
+  await expectText('1/1 predictions');
+  await patchRoom(r => { Object.assign(r.currentMinigame, { phase: 'playing', seedWord: 'CHATEAU', rhymePool: ['BATEAU'], activePlayerId: 'spectator', turnDeadline: Date.now() + 60000 }); });
+  await expectText('Predictions: Guest 1 · Spectator 0');
+  await page.getByRole('button', { name: '👏', exact: true }).click();
+  await until(async () => Object.values((await state()).games[code].currentMinigame.reactions ?? {}).some(r => r.by === hostId && r.emoji === '👏'));
+  await page.locator('.reaction-float').first().waitFor();
+  await patchRoom(r => { Object.assign(r.currentMinigame, { phase: 'complete', winnerId: 'guest', phaseStartedAt: Date.now() }); });
+  await expectText('Points this turn');
+  assert.equal(await page.locator('.payout-summary .mg-row').filter({ hasText: 'Host' }).locator('strong').innerText(), '+2 pts');
+  console.log('PASS predictions/reactions/payout');
+  // The challenged player picks one of the two categories offered in a trivia duel.
+  await patchRoom(r => {
+    r.currentTurn = { id: 'duel:cut', playerId: 'guest', phase: 'playing', minigameType: 'duel', minigame: 'Trivia', opponentId: hostId, startedAt: Date.now() };
+    r.currentMinigame = { id: 'duel:cut', type: 'duel', name: 'Trivia', tPlayerId: 'guest', pPlayerId: hostId, phase: 'category_pick', phaseStartedAt: Date.now(), diceValue: 2, pointsValue: 2, difficulty: 2, offeredCategories: ['Animals', 'Sports'] };
+  });
+  await page.goto(`${origin}/game/${code}/minigame`);
+  await expectText('Guest offers you: choose the category');
+  await page.getByRole('button', { name: 'Sports', exact: true }).click();
+  await until(async () => { const mg = (await state()).games[code].currentMinigame; return mg.phase === 'ready_check' && mg.category === 'Sports'; });
+  assert.deepEqual(errors, []);
+  console.log('PASS trivia category offer');
+  await patchRoom(r => { r.history = []; r.players[hostId].points = 0; r.players.guest.points = 0; });
   // Simulate an API failure, then reload trivia after answering question one.
   await context.route('**/api/trivia', r => r.fulfill({ status:500, json:{ error:'offline' } }));
   await patchRoom(r => { r.currentTurn={id:'trivia:reload',playerId:hostId,phase:'playing',minigameType:'all',minigame:'Trivia',startedAt:Date.now()};r.currentMinigame={id:'trivia:reload',type:'all',name:'Trivia',tPlayerId:hostId,phase:'ready_check',phaseStartedAt:Date.now(),diceValue:6,pointsValue:6,category:'Animals',difficulty:2,loadingContent:true,readyPlayers:Object.fromEntries(Object.keys(r.players).map(id=>[id,true]))}; });

@@ -9,6 +9,7 @@ import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import MgHeader, { Waiting } from '../components/MgHeader';
 import { shuffle, normalize, matchesAny } from '../utils';
+import { roundAwards } from '../lib/session';
 
 const START_MS = 7000;
 const STEP_MS  = 500;
@@ -168,14 +169,16 @@ export default function RimesRapides() {
             : <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.seedWord}</p>}
           <hr style={{ margin: '16px 0', opacity: 0.15 }} />
           <p className="muted" style={{ fontSize: 13, textAlign: 'left', lineHeight: 1.6 }}>
-            📋 <strong>{tr("Règles :")}</strong> {tr("à tour de rôle, tapez un mot qui rime. Interdit de répéter. Le chrono raccourcit à chaque échange — 7 secondes au début, 3 à la fin. Le premier qui cale a perdu.")} </p>
+            📋 <strong>{tr("Règles :")}</strong> {tr("à tour de rôle, tapez un mot qui rime. Interdit de répéter. Le chrono raccourcit à chaque échange — 7 secondes au début, 3 à la fin. Le premier qui cale a perdu.")} {tr("{0} commence.", [pName])} </p>
         </div>
         {isTPlayer && mg.seedWord && (
           <button
             className="btn btn-success btn-large"
+            // The challenged player opens: the first move has the longest clock,
+            // which offsets the challenger's choice of matchup.
             onClick={() => updateMinigame({
               phase: 'playing',
-              activePlayerId: mg.tPlayerId,
+              activePlayerId: mg.pPlayerId,
               turnDeadline: now() + clockFor(0),
             })}
           > {tr("C'est parti !")} </button>
@@ -237,8 +240,7 @@ export default function RimesRapides() {
 
   // ── COMPLETE ────────────────────────────────────────────────────────────
   if (mg.phase === 'complete') {
-    const points = mg.pointsValue ?? 0;
-    const awards = mg.winnerId ? { [mg.winnerId]: points } : {};
+    const points = roundAwards(game)[mg.winnerId] ?? 0;
     const loserName = players[mg.winnerId === mg.tPlayerId ? mg.pPlayerId : mg.tPlayerId]?.name;
 
     return (
@@ -257,7 +259,7 @@ export default function RimesRapides() {
           </p>
         </div>
         {isController
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame()}> {tr("Continuer")} </button>
           : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );

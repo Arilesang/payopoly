@@ -2,8 +2,8 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ref, set, onValue, update, runTransaction, onDisconnect, serverTimestamp } from 'firebase/database';
 import { db } from '../firebase';
 import { shuffle } from '../utils';
-import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, availableMinigames } from '../gameConfig';
-import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards } from '../lib/session';
+import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, PREDICTION_DUELS, PRE_PLAY_PHASES, availableMinigames } from '../gameConfig';
+import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent } from '../lib/session';
 import { requestContent } from '../lib/content';
 import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
@@ -244,7 +244,10 @@ export function GameProvider({ children }) {
   }
   async function selectOpponent(opponentId) {
     if (!game.players?.[opponentId] || opponentId === myPlayerId) return;
-    await updateTurn('choose_opponent', { opponentId, phase: 'playing' });
+    // The last opponent is off the table unless nobody else is left to pick.
+    const others = Object.keys(game.players).filter(id => id !== myPlayerId);
+    if (others.length > 1 && opponentId === lastDuelOpponent(game.history, myPlayerId)) return;
+    await updateTurn('choose_opponent', { opponentId, bounty: isLeaderBounty(game, myPlayerId, opponentId), phase: 'playing' });
   }
 
   // ── Minigame state ───────────────────────────────────────────────────────
@@ -259,6 +262,10 @@ export function GameProvider({ children }) {
       name:        turn.minigame,
       tPlayerId:   turn.playerId,
       pPlayerId:   turn.opponentId ?? null,
+      bounty:      turn.bounty ?? false,   // duels: trailing challenger vs leader
+      bets:        {},     // duels: spectator predictions
+      reactions:   {},     // duels: spectator emoji
+      offeredCategories: null, // Trivia duel — the two categories on offer
       phase:       'rules',
       diceValue:   null,
       letter:      null,
@@ -376,6 +383,22 @@ export function GameProvider({ children }) {
   // Cast a vote — spectators only; choice is 'yes'/'no' or a playerId
   async function castVote(choice) {
     await setMyEntry('votes', choice);
+  }
+
+  // Spectator prediction on an objective duel; locks once play starts.
+  async function placeBet(choice) {
+    const mgId = game.currentMinigame?.id;
+    await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
+      if (!current || current.id !== mgId || current.type !== 'duel' || !PREDICTION_DUELS.includes(current.name)) return undefined;
+      if (!PRE_PLAY_PHASES.includes(current.phase) || ![current.tPlayerId, current.pPlayerId].includes(choice)) return undefined;
+      if ([current.tPlayerId, current.pPlayerId].includes(myPlayerId) || current.bets?.[myPlayerId] !== undefined) return undefined;
+      current.bets = { ...current.bets, [myPlayerId]: choice };
+      return current;
+    }, { applyLocally: false });
+  }
+
+  async function sendReaction(emoji) {
+    await pushEntry('reactions', { by: myPlayerId, emoji, at: now() });
   }
 
   // ── Generic per-player writers ───────────────────────────────────────────
@@ -544,6 +567,11 @@ export function GameProvider({ children }) {
       updateMinigame({ phase: 'voting' }).catch(() => setError('connectionError'));
       return;
     }
+    // An absent opponent cannot hold the Trivia duel on the category offer.
+    if (mg.name === 'Trivia' && mg.phase === 'category_pick' && tick - mg.phaseStartedAt >= 20000) {
+      updateMinigame({ category: mg.offeredCategories?.[0] ?? null, phase: 'ready_check' }).catch(() => setError('connectionError'));
+      return;
+    }
     if (mg.phase === 'bonus_pick' && tick - mg.phaseStartedAt >= 30000) {
       updateMinigame({ phase: 'complete' }).catch(() => setError('connectionError'));
       return;
@@ -584,7 +612,7 @@ export function GameProvider({ children }) {
       submitCategory, finishCategorySubmission,
       selectMinigameType, selectMinigame, selectOpponent,
       initMinigame, updateMinigame, setMinigameReady,
-      submitTriviaAnswer, castVote, completeMinigame,
+      submitTriviaAnswer, castVote, placeBet, sendReaction, completeMinigame,
       setMyEntry, pushEntry, closeVoting,
       pushDrawingStroke, updateCurrentStroke, clearDrawing,
       pushMyStroke, updateMyCurrentStroke, clearMyDrawing,

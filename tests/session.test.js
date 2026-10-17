@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders } from '../src/lib/session.js';
+import { finishTurn, cleanAwards, scoreUnit, controllerId, wheelGames, triviaResult, tiedLeaders, roundAwards, predictionAwards, isLeaderBounty, headToHead, lastDuelOpponent } from '../src/lib/session.js';
 import { fallbackContent, validContent, requestContent } from '../src/lib/content.js';
 import { votesSettled, topVote } from '../src/utils.js';
 const room = () => ({ status: 'play', sessionId: 's', settings: { rounds: 1, scoring: 'dice' }, initialPlayerCount: 2,
@@ -77,12 +77,73 @@ test('automatic and manual results use the same taboo and punchline payouts', as
   const { roundAwards } = await import('../src/lib/session.js');
   const r = room(); r.currentMinigame = { name:'Mot Interdit', pointsValue:6, diceValue:6, tPlayerId:'a', foundBy:'b' };
   assert.deepEqual(roundAwards(r), { a:6, b:6 });
-  r.currentMinigame = { name:'Punchline', pointsValue:3, diceValue:6, winnerId:'a', votes:{ b:'a', c:'a' } };
-  assert.deepEqual(roundAwards(r), { a:6 });
+  r.currentMinigame = { name:'Punchline', type:'duel', pointsValue:6, diceValue:6, tPlayerId:'a', pPlayerId:'b', winnerId:'a', votes:{ c:'a', d:'a' } };
+  assert.deepEqual(roundAwards(r), { a:12 });
   r.currentMinigame.winnerId=null;r.currentMinigame.winnerIds=['a','b'];
-  assert.deepEqual(roundAwards(r), { a:1.5, b:1.5 });
+  assert.deepEqual(roundAwards(r), { a:3, b:3 });
 });
 
 test('voting waits for the final ballot when a unanimity bonus remains at stake', () => {
   assert.equal(votesSettled({ a:'x', b:'x' }, ['a','b','c'], Date.now()+10000), false);
+});
+
+const duelRoom = (mg, players = { a: { points: 1 }, b: { points: 9 }, c: { points: 0 }, d: { points: 0 }, e: { points: 0 } }) => ({
+  ...room(), players, currentMinigame: { type: 'duel', tPlayerId: 'a', pPlayerId: 'b', diceValue: 4, pointsValue: 4, ...mg },
+});
+
+test('punchline pays the die, and a clean sweep really doubles it past the usual cap', () => {
+  const r = duelRoom({ name: 'Punchline', winnerId: 'a', votes: { c: 'a', d: 'a', e: 'a' } });
+  assert.equal(scoreUnit(r), 4);
+  assert.deepEqual(roundAwards(r), { a: 8 });
+  r.currentMinigame.votes.e = 'b';
+  assert.deepEqual(roundAwards(r), { a: 4 });
+  // One judge alone never counts as a sweep.
+  r.currentMinigame.votes = { c: 'a' };
+  assert.deepEqual(roundAwards(r), { a: 4 });
+});
+
+test('leader bounty pays +50% only when the trailing challenger beats the leader', () => {
+  const r = duelRoom({ name: 'Rimes Rapides', bounty: true, winnerId: 'a' });
+  assert.ok(isLeaderBounty(r, 'a', 'b'));
+  assert.ok(!isLeaderBounty(r, 'b', 'a'));
+  assert.ok(!isLeaderBounty(r, 'a', 'c'));
+  assert.deepEqual(roundAwards(r), { a: 6 });
+  r.currentMinigame.winnerId = 'b';
+  assert.deepEqual(roundAwards(r), { b: 4 });
+  // A bounty duel can still be a Punchline sweep: both stack.
+  Object.assign(r.currentMinigame, { name: 'Punchline', winnerId: 'a', votes: { c: 'a', d: 'a' } });
+  assert.deepEqual(roundAwards(r), { a: 10 });
+  // Duel extras never stretch the cap for anyone but the winner.
+  assert.deepEqual(cleanAwards(r, { b: 10 }), { b: 4 });
+});
+
+test('predictions pay half the die with the crowd and the full die against it', () => {
+  const r = duelRoom({ name: 'Trivia', winnerId: 'a', winnerIds: ['a'], bets: { c: 'a', d: 'b', e: 'b' } });
+  assert.deepEqual(predictionAwards(r), { c: 4 });
+  r.currentMinigame.winnerId = 'b'; r.currentMinigame.winnerIds = ['b'];
+  assert.deepEqual(predictionAwards(r), { d: 2, e: 2 });
+  assert.deepEqual(roundAwards(r), { b: 4, d: 2, e: 2 });
+  // An even split is not an upset.
+  r.currentMinigame.bets = { c: 'a', d: 'b' };
+  assert.deepEqual(predictionAwards(r), { d: 2 });
+  // Ties, no winner, judged duels and duellists' own bets pay nothing.
+  r.currentMinigame.winnerId = null; r.currentMinigame.winnerIds = ['a', 'b'];
+  assert.deepEqual(predictionAwards(r), {});
+  const judged = duelRoom({ name: 'Punchline', winnerId: 'a', bets: { c: 'a' }, votes: { c: 'a' } });
+  assert.deepEqual(predictionAwards(judged), {});
+  const self = duelRoom({ name: 'Rimes Rapides', winnerId: 'a', bets: { a: 'a' } });
+  assert.deepEqual(predictionAwards(self), {});
+});
+
+test('duels are recorded for head-to-head and the last opponent', () => {
+  const r = { ...duelRoom({ name: 'Rimes Rapides', winnerId: 'b' }), currentTurn: { id: 's:0', playerId: 'a' }, playerOrder: ['a', 'b', 'c'] };
+  const next = finishTurn(r, roundAwards(r), 1000, 's:0');
+  assert.deepEqual(next.history[0].duel, { ids: ['a', 'b'], winnerId: 'b' });
+  const skipped = finishTurn(r, {}, 1000, 's:0', 'skipped');
+  assert.equal(skipped.history[0].duel.winnerId, null);
+  const history = [...next.history, ...skipped.history, { duel: { ids: ['c', 'a'], winnerId: 'a' } }];
+  assert.deepEqual(headToHead(history, 'a', 'b'), { a: 0, b: 1 });
+  assert.equal(lastDuelOpponent(history, 'a'), 'c');
+  assert.equal(lastDuelOpponent(history, 'b'), 'a');
+  assert.equal(lastDuelOpponent([], 'a'), null);
 });

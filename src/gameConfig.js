@@ -42,6 +42,18 @@ export const MINIGAME_META = {
   'solo:Mot Melangés':   { kind: 'solo',     minPlayers: 2 },
 };
 
+// Duels with an objective result, where spectators can call the winner before
+// play starts. Judged duels (Petit Bac, Punchline) are left out: a spectator who
+// bet on one side would then vote for it.
+export const PREDICTION_DUELS = ['Trivia', 'Rimes Rapides'];
+
+// Phases before a duel's outcome can be read off the screen. Predictions lock
+// once the minigame moves past these.
+export const PRE_PLAY_PHASES = ['rules', 'dice', 'category_select', 'category_pick', 'ready_check', 'seed_reveal'];
+
+// Extra share of the die a trailing challenger earns for beating the leader.
+export const BOUNTY_SHARE = 0.5;
+
 // Every minigame the lobby is big enough to actually play, each listed once.
 export function availableMinigames(type, playerCount) {
   const all = MINIGAMES[type] ?? [];

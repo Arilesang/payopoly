@@ -1,10 +1,12 @@
 import MgHeader from '../components/MgHeader';
 import { useText } from '../context/useText';
-import { triviaResult } from '../lib/session';
+import { triviaResult, roundAwards } from '../lib/session';
 import Countdown from '../components/Countdown';
 // Duel — Trivia (AI-generated MCQ)
-// Phases: dice → category_select → ready_check → playing → results → complete
-import { useEffect } from 'react';
+// Phases: dice → category_select → category_pick → ready_check → playing → results → complete
+// The challenger offers two of their categories and the opponent picks one,
+// so neither side gets to choose its own favourite subject outright.
+import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 
@@ -24,6 +26,7 @@ export default function TriviaDuel() {
   const tName = players[mg?.tPlayerId]?.name;
   const pName = players[mg?.pPlayerId]?.name;
   const isParticipant = isTPlayer || isPPlayer;
+  const [offer, setOffer] = useState([]);
 
   // ── TPlayer: fetch trivia once both ready ─────────────────────────────
   useEffect(() => {
@@ -86,27 +89,62 @@ export default function TriviaDuel() {
     );
   }
 
-  // ── CATEGORY SELECT ───────────────────────────────────────────────────
+  // ── CATEGORY SELECT — the challenger offers two ───────────────────────
   if (mg.phase === 'category_select') {
     const myCategories = players[mg.tPlayerId]?.categories ?? [];
+    const single = myCategories.length < 2;
+    const toggle = cat => setOffer(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : prev.length < 2 ? [...prev, cat] : prev);
     return (
       <div className="page page-minigame">
         <MgHeader title="Trivia" subtitle={tr("Difficulté {0}/6", [mg.difficulty])} />
         {isTPlayer ? (
           <>
-            <p className="label" style={{ paddingLeft: 4 }}>{tr("Choisis une catégorie")}</p>
+            <p className="label" style={{ paddingLeft: 4 }}>{single ? tr("Choisis une catégorie") : tr("Propose deux catégories : {0} choisira", [pName])}</p>
             <div className="category-select-list">
               {myCategories.map((cat, i) => (
-                <button key={i} className="btn btn-category"
-                  onClick={() => updateMinigame({ category: cat, phase: 'ready_check' })}>
+                <button key={i} className={`btn btn-category ${offer.includes(cat) ? 'voted' : ''}`} aria-pressed={offer.includes(cat)}
+                  onClick={() => single ? updateMinigame({ category: cat, phase: 'ready_check' }) : toggle(cat)}>
                   {cat}
                 </button>
               ))}
             </div>
+            {!single && (
+              <button className="btn btn-primary" disabled={offer.length !== 2}
+                onClick={() => updateMinigame({ offeredCategories: offer, phase: 'category_pick' })}>
+                {tr("Proposer ces deux catégories")}
+              </button>
+            )}
           </>
         ) : (
           <p className="muted" style={{ textAlign: 'center', marginTop: 40 }}>
-            {tName} {tr("choisit une catégorie...")} </p>
+            {tName} {tr("choisit deux catégories...")} </p>
+        )}
+      </div>
+    );
+  }
+
+  // ── CATEGORY PICK — the opponent chooses one of the two ───────────────
+  if (mg.phase === 'category_pick') {
+    const offered = mg.offeredCategories ?? [];
+    return (
+      <div className="page page-minigame">
+        <MgHeader title="Trivia" subtitle={tr("Difficulté {0}/6", [mg.difficulty])} />
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <Countdown startedAt={mg.phaseStartedAt} total={20} />
+        </div>
+        {isPPlayer ? (
+          <>
+            <p className="label" style={{ paddingLeft: 4 }}>{tr("{0} te propose : choisis la catégorie", [tName])}</p>
+            <div className="category-select-list">
+              {offered.map(cat => (
+                <button key={cat} className="btn btn-category" onClick={() => updateMinigame({ category: cat, phase: 'ready_check' })}>{cat}</button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="muted" style={{ textAlign: 'center' }}>
+            {tr("{0} propose {1} ou {2} — {3} choisit...", [tName, offered[0], offered[1], pName])}
+          </p>
         )}
       </div>
     );
@@ -142,24 +180,38 @@ export default function TriviaDuel() {
 
     if (!q) return <div className="page page-center"><div className="spinner" /></div>;
 
+    // Spectators follow the duel live: each question is revealed — both picks
+    // and the right answer — as soon as both duellists have locked it in.
     if (isSpectator) {
+      const pickFor = (id, qi) => Object.values(mg.triviaAnswers?.[id] ?? {}).find(a => a.questionIndex === qi);
+      const revealed = qi => participantIds.every(id => pickFor(id, qi));
+      const running = id => qs.filter((question, qi) => revealed(qi) && pickFor(id, qi).answerIndex === question.answer).length;
       return (
         <div className="page page-minigame">
-          <MgHeader title="Trivia" subtitle={`${tName} ⚔️ ${pName}`} />
+          <MgHeader title="Trivia" subtitle={`${tName} ${running(mg.tPlayerId)} – ${running(mg.pPlayerId)} ${pName}`} />
+          <Countdown startedAt={mg.countdownStartedAt} total={60} />
           {qs.map((question, qi) => (
             <div key={qi} className="card trivia-question" style={{ marginBottom: 8 }}>
               <p className="label" style={{ marginBottom: 4 }}>Q{qi + 1}</p>
               <p className="trivia-q-text">{question.q}</p>
-              <div className="trivia-options" style={{ pointerEvents: 'none', opacity: 0.7 }}>
-                {question.options.map((opt, i) => (
-                  <div key={i} className="btn btn-category" style={{ cursor: 'default' }}>
-                    <span className="opt-letter">{['A', 'B', 'C', 'D'][i]}</span> {opt}
-                  </div>
-                ))}
+              <div className="trivia-options" style={{ pointerEvents: 'none' }}>
+                {question.options.map((opt, i) => {
+                  const pickers = revealed(qi) ? participantIds.filter(id => pickFor(id, qi).answerIndex === i) : [];
+                  return (
+                    <div key={i} className={`btn btn-category ${revealed(qi) && i === question.answer ? 'trivia-correct' : ''}`} style={{ cursor: 'default', opacity: revealed(qi) ? 1 : 0.7 }}>
+                      <span className="opt-letter">{['A', 'B', 'C', 'D'][i]}</span> {opt}
+                      {pickers.map(id => <span key={id} className="trivia-picker">{players[id]?.name}</span>)}
+                    </div>
+                  );
+                })}
               </div>
+              {!revealed(qi) && (
+                <p className="muted duel-note">
+                  {participantIds.map(id => `${players[id]?.name} ${pickFor(id, qi) ? '🔒' : '⏳'}`).join(' · ')}
+                </p>
+              )}
             </div>
           ))}
-          <p className="muted" style={{ textAlign: 'center' }}>{tr("En attente des réponses...")}</p>
         </div>
       );
     }
@@ -198,7 +250,7 @@ export default function TriviaDuel() {
         <MgHeader title={tr("Résultats")} />
         <div className="result-banner card">
           <p className="result-winner">{mg.winnerId ? `🏆 ${players[mg.winnerId]?.name}` : mg.winnerIds?.length > 1 ? tr('Égalité') : tr('Aucune bonne réponse')}</p>
-          <p className="muted">{mg.winnerId || mg.winnerIds?.length ? `+${mg.diceValue} ${tr('points')}` : `0 ${tr('points')}`}</p>
+          <p className="muted">{mg.winnerId ? `+${roundAwards(game)[mg.winnerId] ?? 0} ${tr('points')}` : mg.winnerIds?.length > 1 ? tr('Points partagés') : `0 ${tr('points')}`}</p>
         </div>
         <div className="score-row card">
           <span>{tName} : {mg.tScore ?? 0}/3</span>

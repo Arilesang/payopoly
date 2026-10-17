@@ -7,7 +7,7 @@ import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import SlotMachineLetter from '../components/SlotMachineLetter';
 import Countdown from '../components/Countdown';
-import { tiedLeaders } from '../lib/session';
+import { tiedLeaders, roundAwards } from '../lib/session';
 import { shuffle } from '../utils';
 
 export default function PetitBacDuel() {
@@ -135,8 +135,15 @@ export default function PetitBacDuel() {
       <div className="page page-minigame page-center">
         <MgHeader title={tr("Résultat")} />
         <div className="result-banner card">
-          <p className="result-winner">🏆 {players[mg.winnerId]?.name ?? '—'}</p>
-          <p className="muted">+{mg.diceValue} point{mg.diceValue > 1 ? 's' : ''}</p>
+          {mg.winnerId
+            ? <>
+                <p className="result-winner">🏆 {players[mg.winnerId]?.name}</p>
+                <p className="muted">+{roundAwards(game)[mg.winnerId] ?? 0} pts</p>
+              </>
+            : <>
+                <p className="result-winner">{mg.winnerIds?.length > 1 ? tr('Égalité') : tr("Personne n'a voté !")}</p>
+                <p className="muted">{mg.winnerIds?.length > 1 ? tr('Points partagés') : `0 ${tr('points')}`}</p>
+              </>}
         </div>
         {isController && (
           <button className="btn btn-large btn-primary" onClick={() => completeMinigame(mg.winnerId)}> {tr("Continuer")} </button>

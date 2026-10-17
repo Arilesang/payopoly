@@ -7,7 +7,9 @@ import CategoryPopup from '../components/CategoryPopup';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
 import Results from './Results';
 import SessionControls from '../components/SessionControls';
-import { wheelGames } from '../lib/session';
+import { wheelGames, headToHead, isLeaderBounty, lastDuelOpponent } from '../lib/session';
+import { rankingRows } from '../lib/rankings';
+import { BOUNTY_SHARE } from '../gameConfig';
 import ScoreSheet from '../components/ScoreSheet';
 import { identityStorage } from '../lib/identityStorage';
 
@@ -228,6 +230,7 @@ export default function Game() {
 // ── Sub-component: current player's turn panel ──────────────────
 function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, onSelectOpponent }) {
   const { game } = useGame();
+  const { say } = useLang();
   const [devPick, setDevPick] = useState(null);
   const devMode = game?.devMode ?? false;
 
@@ -287,16 +290,29 @@ function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, o
 
   if (turn?.phase === 'choose_opponent') {
     const opponents = Object.entries(players).filter(([id]) => id !== myPlayerId);
+    const rows = Object.fromEntries(rankingRows(game).map(row => [row.id, row]));
+    const blocked = opponents.length > 1 ? lastDuelOpponent(game.history, myPlayerId) : null;
     return (
       <div className="card turn-card">
         <p className="turn-label">🎮 {turn.minigame}</p>
         <p className="turn-prompt">{t('game.chooseOpponent')}</p>
         <div className="category-select-list">
-          {opponents.map(([id, p]) => (
-            <button key={id} className="btn btn-category" onClick={() => onSelectOpponent(id)}>
-              {p.name}
-            </button>
-          ))}
+          {opponents.map(([id, p]) => {
+            const record = headToHead(game.history, myPlayerId, id);
+            const played = record[myPlayerId] + record[id];
+            return (
+              <button key={id} className="btn btn-category opponent-option" disabled={id === blocked} onClick={() => onSelectOpponent(id)}>
+                <span className="opponent-name">{p.name}</span>
+                <span className="opponent-meta">
+                  #{rows[id]?.rank} · {rows[id]?.points ?? 0} pts
+                  {played > 0 && ` · ${say(`toi ${record[myPlayerId]} – ${record[id]}`, `you ${record[myPlayerId]} – ${record[id]}`)}`}
+                </span>
+                {id === blocked
+                  ? <span className="opponent-tag">{say('Dernier adversaire', 'Last opponent')}</span>
+                  : isLeaderBounty(game, myPlayerId, id) && <span className="opponent-tag duel-bounty">🎯 {say('Prime au leader', 'Leader bounty')} +{BOUNTY_SHARE * 100}%</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
     );

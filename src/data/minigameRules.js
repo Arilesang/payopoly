@@ -138,8 +138,8 @@ export const MINIGAME_RULES = [
         en: 'Pick your opponent, then roll: the die sets the points AND the difficulty (1 = very easy, 6 = very hard).',
       },
       {
-        fr: 'Choisis une de tes catégories. L’IA génère 3 questions à choix multiple dessus.',
-        en: 'Choose one of your categories. The AI writes 3 multiple-choice questions on it.',
+        fr: 'Propose deux de tes catégories ; ton adversaire en choisit une. L’IA génère 3 questions à choix multiple dessus.',
+        en: 'Offer two of your categories; your opponent picks one. The AI writes 3 multiple-choice questions on it.',
       },
       {
         fr: 'Les deux duellistes se déclarent prêts, puis répondent chacun sur son téléphone.',
@@ -155,8 +155,8 @@ export const MINIGAME_RULES = [
       en: 'The better score takes the die’s points. On a tie, the faster player wins.',
     },
     tip: {
-      fr: 'Tu choisis la catégorie… mais l’IA choisit les questions. Ta catégorie fétiche peut te trahir.',
-      en: 'You pick the category — the AI picks the questions. Your pet subject can still betray you.',
+      fr: 'Avant le coup d’envoi, les spectateurs parient sur le vainqueur : ½ dé s’ils ont raison, le dé entier s’ils ont vu juste contre la majorité.',
+      en: 'Before kick-off, spectators predict the winner: half the die if right, the full die if right against the majority.',
     },
   },
   {
@@ -216,8 +216,8 @@ export const MINIGAME_RULES = [
         en: 'A seed word is revealed to both duellists.',
       },
       {
-        fr: 'Chacun son tour, tapez un mot qui rime. Interdit de répéter un mot déjà joué.',
-        en: 'Take turns typing a rhyming word. Repeating one already played is out.',
+        fr: 'Chacun son tour, tapez un mot qui rime — l’adversaire défié commence. Interdit de répéter un mot déjà joué.',
+        en: 'Take turns typing a rhyming word — the challenged player goes first. Repeating one already played is out.',
       },
       {
         fr: 'Le chrono démarre à 7 secondes et perd une demi-seconde par échange, jusqu’à 3 secondes.',
@@ -229,8 +229,8 @@ export const MINIGAME_RULES = [
       en: 'First to stall, repeat, or run out the clock loses. The other takes the die’s points.',
     },
     tip: {
-      fr: 'Garde tes rimes faciles pour la fin : à 3 secondes, tu n’auras plus le temps de réfléchir.',
-      en: 'Save your easy rhymes for later — at 3 seconds there’s no time left to think.',
+      fr: 'Garde tes rimes faciles pour la fin : à 3 secondes, tu n’auras plus le temps de réfléchir. Les spectateurs parient sur le vainqueur avant le coup d’envoi.',
+      en: 'Save your easy rhymes for later — at 3 seconds there’s no time left to think. Spectators predict the winner before kick-off.',
     },
   },
 

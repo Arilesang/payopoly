@@ -1,4 +1,4 @@
-import { MINIGAME_META, availableMinigames } from '../gameConfig.js';
+import { MINIGAME_META, BOUNTY_SHARE, PREDICTION_DUELS, availableMinigames } from '../gameConfig.js';
 
 export const DEFAULT_SETTINGS = { rounds: null, preset: 'classic', language: 'fr', scoring: 'dice' };
 export const CATEGORIES = {
@@ -23,8 +23,21 @@ export function wheelGames(room, type) {
   const withoutRepeat = names.filter(n => `${type}:${n}` !== last?.key);
   return withoutRepeat.length ? withoutRepeat : names;
 }
-export function payoutCap(room, mg = room.currentMinigame) {
-  return room.settings?.scoring === 'fixed' ? 10 : Number(mg?.diceValue ?? mg?.pointsValue ?? 0);
+// The duel's single winner, or null on a tie or when nobody won.
+export function soleWinner(mg) {
+  return mg?.winnerIds?.length > 1 ? null : mg?.winnerId ?? null;
+}
+// Punchline pays double when every judge (at least two) picked the same answer.
+export function punchlineSweep(mg) {
+  const votes = Object.values(mg?.votes ?? {});
+  return mg?.name === 'Punchline' && !!soleWinner(mg) && votes.length >= 2 && votes.every(id => id === mg.winnerId);
+}
+// Each player earns at most the die value per minigame. A duel winner is the
+// one exception: a Punchline sweep and the leader bounty pay beyond it.
+export function payoutCap(room, mg = room.currentMinigame, playerId = null) {
+  const base = room.settings?.scoring === 'fixed' ? 10 : Number(mg?.diceValue ?? mg?.pointsValue ?? 0);
+  if (!playerId || mg?.type !== 'duel' || playerId !== soleWinner(mg)) return base;
+  return base * (punchlineSweep(mg) ? 2 : 1) + (mg.bounty && playerId === mg.tPlayerId ? base * BOUNTY_SHARE : 0);
 }
 // Crowd-dependent rewards have a fixed per-person budget, regardless of table size.
 export function scoreUnit(room, mg = room.currentMinigame) {
@@ -34,13 +47,44 @@ export function scoreUnit(room, mg = room.currentMinigame) {
   if (mg?.name === 'Qui a écrit ça') return cap / Math.max(1, Math.min(n, 6));
   if (mg?.name === 'Croquis Croisés') return cap / Math.max(1, Math.min(n, 3) * Math.max(1, n - 1));
   if (mg?.name === 'Sondage Éclair') return cap / 2;
-  if (mg?.name === 'Punchline') return cap / 2;
   return cap;
 }
 export function cleanAwards(room, awards) {
-  const cap = payoutCap(room);
   return Object.fromEntries(Object.entries(awards ?? {}).filter(([id, value]) => room.players?.[id] && Number.isFinite(value) && value > 0)
-    .map(([id, value]) => [id, Math.min(cap, Math.round(value * 10) / 10)]));
+    .map(([id, value]) => [id, Math.min(payoutCap(room, room.currentMinigame, id), Math.round(value * 10) / 10)]));
+}
+
+// ── Duels ─────────────────────────────────────────────────────────────────
+// A trailing challenger who picks the current leader (joint leaders count)
+// puts a bounty on the duel. It pays only if the challenger wins.
+export function isLeaderBounty(room, challengerId, opponentId) {
+  const points = id => room.players?.[id]?.points ?? 0;
+  const top = Math.max(...Object.keys(room.players ?? {}).map(points));
+  return !!room.players?.[opponentId] && points(opponentId) === top && points(challengerId) < top;
+}
+export function headToHead(history, a, b) {
+  const record = { [a]: 0, [b]: 0 };
+  (history ?? []).forEach(turn => {
+    const ids = turn.duel?.ids ?? [];
+    if (!turn.skipped && ids.includes(a) && ids.includes(b) && turn.duel.winnerId in record) record[turn.duel.winnerId] += 1;
+  });
+  return record;
+}
+// The player this one faced in their most recent duel, on either side.
+export function lastDuelOpponent(history, id) {
+  const last = [...(history ?? [])].reverse().find(turn => turn.duel?.ids?.includes(id));
+  return last?.duel.ids.find(other => other !== id) ?? null;
+}
+// Spectators who called the winner earn half the die; calling it against the
+// crowd earns the full die. Ties and duels nobody won pay no predictions.
+export function predictionAwards(room, mg = room.currentMinigame) {
+  const winner = soleWinner(mg);
+  if (mg?.type !== 'duel' || !PREDICTION_DUELS.includes(mg.name) || !winner) return {};
+  const bets = Object.entries(mg.bets ?? {}).filter(([id]) => id !== mg.tPlayerId && id !== mg.pPlayerId);
+  const backers = bets.filter(([, pick]) => pick === winner).length;
+  const upset = backers < bets.length - backers;
+  const cap = payoutCap(room, mg);
+  return Object.fromEntries(bets.filter(([, pick]) => pick === winner).map(([id]) => [id, upset ? cap : cap / 2]));
 }
 export function finishTurn(room, awards, now, expectedTurnId, reason = null) {
   if (!room || room.status !== 'play' || room.currentTurn?.id !== expectedTurnId) return undefined;
@@ -49,8 +93,10 @@ export function finishTurn(room, awards, now, expectedTurnId, reason = null) {
   Object.entries(payouts).forEach(([id, value]) => { players[id].points = Math.round(((players[id].points ?? 0) + value) * 10) / 10; });
   const order = (room.playerOrder ?? []).filter(id => players[id]);
   const turn = room.currentTurn;
+  const mg = room.currentMinigame;
   const history = [...(room.history ?? []), {
     turnId: turn.id, key: `${turn.minigameType}:${turn.minigame}`, playerId: turn.playerId,
+    ...(mg?.type === 'duel' && mg.pPlayerId ? { duel: { ids: [mg.tPlayerId, mg.pPlayerId], winnerId: reason ? null : soleWinner(mg) } } : {}),
     awards: payouts,
     scoresBefore: Object.fromEntries(Object.entries(room.players ?? {}).map(([id, p]) => [id, p.points ?? 0])),
     scoresAfter: Object.fromEntries(Object.entries(players).map(([id, p]) => [id, p.points ?? 0])),
@@ -96,11 +142,11 @@ export function roundAwards(room) {
   if (mg.winnerIds?.length > 1) return cleanAwards(room, Object.fromEntries(mg.winnerIds.map(id => [id, points / mg.winnerIds.length])));
   if (mg.name === 'Mot Interdit') return mg.foundBy ? cleanAwards(room, { [mg.tPlayerId]: points, [mg.foundBy]: points }) : {};
   const awards = {};
-  if (mg.winnerId) {
-    const votes = Object.values(mg.votes ?? {});
-    const sweep = mg.name === 'Punchline' && votes.length >= 2 && votes.every(id => id === mg.winnerId);
-    awards[mg.winnerId] = sweep ? points * 2 : points;
-  }
+  if (mg.winnerId) awards[mg.winnerId] = punchlineSweep(mg) ? points * 2 : points;
   if (mg.bonusWinnerId) awards[mg.bonusWinnerId] = (awards[mg.bonusWinnerId] ?? 0) + points;
+  if (mg.type === 'duel') {
+    if (mg.bounty && mg.winnerId && mg.winnerId === mg.tPlayerId) awards[mg.winnerId] += payoutCap(room, mg) * BOUNTY_SHARE;
+    Object.assign(awards, predictionAwards(room, mg));
+  }
   return cleanAwards(room, awards);
 }

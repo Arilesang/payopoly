@@ -209,5 +209,12 @@ export default {
   "(pas de réponse)": "(no answer)",
   "temps": "time ran out",
   "déjà dit": "already used",
-  "ne rime pas": "does not rhyme"
+  "ne rime pas": "does not rhyme",
+  "Points partagés": "Points shared",
+  "Propose deux catégories : {0} choisira": "Offer two categories: {0} will choose",
+  "Proposer ces deux catégories": "Offer these two categories",
+  "choisit deux catégories...": "is choosing two categories...",
+  "{0} te propose : choisis la catégorie": "{0} offers you: choose the category",
+  "{0} propose {1} ou {2} — {3} choisit...": "{0} offers {1} or {2} — {3} is choosing...",
+  "{0} commence.": "{0} goes first."
 };

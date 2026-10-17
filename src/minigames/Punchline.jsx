@@ -8,8 +8,8 @@ import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import MgHeader, { Waiting, TallyLine } from '../components/MgHeader';
-import { tiedLeaders } from '../lib/session';
-import { shuffle, votesSettled, tallyVotes, topVote } from '../utils';
+import { tiedLeaders, roundAwards, punchlineSweep } from '../lib/session';
+import { shuffle, votesSettled, topVote } from '../utils';
 
 const WRITE_SECONDS = 45;
 const VOTE_SECONDS  = 20;
@@ -194,14 +194,10 @@ export default function Punchline() {
 
   // ── COMPLETE ────────────────────────────────────────────────────────────
   if (mg.phase === 'complete') {
-    const points   = mg.pointsValue ?? 0;
-    const tally    = tallyVotes(mg.votes);
-    const cast     = Object.keys(mg.votes ?? {}).length;
     const winnerId = mg.winnerId;
     // A shutout — every vote cast, none for the loser — pays double.
-    const shutout  = !!winnerId && cast >= 2 && (tally[winnerId] ?? 0) === cast;
-    const payout   = shutout ? points * 2 : points;
-    const awards   = winnerId ? { [winnerId]: payout } : {};
+    const shutout  = punchlineSweep(mg);
+    const payout   = roundAwards(game)[winnerId] ?? 0;
 
     return (
       <div className="page page-minigame page-center">
@@ -213,6 +209,7 @@ export default function Punchline() {
                 <p className="muted">+{payout} pts{shutout ? tr(" — carton plein, points doublés !") : ''}</p>
               </>
             : <p className="result-winner">{mg.winnerIds?.length > 1 ? tr('Égalité') : tr("Personne n'a voté !")}</p>}
+          {mg.winnerIds?.length > 1 && <p className="muted">{tr('Points partagés')}</p>}
         </div>
 
         <div className="card" style={{ width: '100%' }}>
@@ -225,7 +222,7 @@ export default function Punchline() {
         </div>
 
         {isController
-          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>
+          ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame()}> {tr("Continuer")} </button>
           : <Waiting text={tr("{0} va continuer...", [tName])} />}
       </div>
     );

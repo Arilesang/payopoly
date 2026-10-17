@@ -8,6 +8,7 @@ import ScoreSheet from '../components/ScoreSheet';
 import RoundIntro from '../components/RoundIntro';
 import SessionControls from '../components/SessionControls';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
+import { DuelBar } from '../components/DuelStage';
 import { useState } from 'react';
 import PetitBacDuel   from './PetitBacDuel';
 import TriviaDuel     from './TriviaDuel';
@@ -93,6 +94,7 @@ export default function MinigameRouter() {
     <ScoreSheet />
     <button className="btn btn-small btn-ghost round-help" onClick={() => setHelp(true)}>{say('Règles et aide', 'Rules and help')}</button>
     {mg.fallback && <p className="connection-banner" role="status">{say('Contenu de secours · thème général', 'Backup content · general theme')}</p>}
+    {mg.type === 'duel' && mg.pPlayerId && mg.phase !== 'rules' && <DuelBar />}
     {mg.phase === 'rules' ? <RoundIntro /> : <Component key={mg.id} />}
     {['complete', 'results'].includes(mg.phase) && <RoundScoreSummary />}
     {['complete', 'results'].includes(mg.phase) && <p className="round-note">{mg.winnerIds?.length > 1 ? say('Égalité : les points sont partagés.', 'Tie: points are shared.') : mg.name === 'Trivia' && !mg.winnerId ? say('Aucune bonne réponse : aucun point attribué.', 'No correct answers: no points awarded.') : ''}{say(' Le tour suivant commence automatiquement après 30 secondes.', ' The next turn starts automatically after 30 seconds.')}</p>}
