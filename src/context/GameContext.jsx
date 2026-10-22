@@ -9,6 +9,8 @@ import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
 import { writePetitBacWord, validPetitBacVote, petitBacResult } from '../lib/petitBac';
 
+import { PARTY_GAMES, partyTransition, writePartyEntry } from '../lib/partyGames';
+
 const GameContext = createContext();
 
 const CATEGORIES_PER_PLAYER = 3;
@@ -458,6 +460,7 @@ export function GameProvider({ children }) {
     const mgId = game.currentMinigame?.id;
     await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
       if (!current || current.id !== mgId || ['complete', 'results'].includes(current.phase)) return undefined;
+      if (PARTY_GAMES.includes(current.name) && !['rulesReady', 'readyPlayers'].includes(field)) return writePartyEntry(current, myPlayerId, field, value, now());
       const keys = field.split('/');
       let parent = current;
       for (const key of keys.slice(0, -1)) parent = parent[key] ??= {};
@@ -594,6 +597,17 @@ export function GameProvider({ children }) {
     const elapsed = tick - (mg.countdownStartedAt ?? mg.phaseStartedAt ?? tick);
     if (['results', 'complete'].includes(mg.phase)) {
       if (tick - mg.phaseStartedAt > 30000) completeMinigame(mg.awards ?? mg.winnerId, mg.bonusWinnerId).catch(() => setError('connectionError'));
+      return;
+    }
+    if (PARTY_GAMES.includes(mg.name) && partyTransition(game, tick)) {
+      runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
+        if (current?.id !== mg.id) return undefined;
+        const transition = partyTransition({ ...game, currentMinigame: current }, now());
+        if (!transition) return undefined;
+        const next = { ...current, ...transition, phaseStartedAt: now() };
+        if (transition.awards) next.awards = cleanAwards({ ...game, currentMinigame: next }, transition.awards);
+        return next;
+      }, { applyLocally: false }).catch(() => setError('connectionError'));
       return;
     }
     if (mg.name === 'Trivia' && mg.phase === 'playing' && elapsed >= 60000) {

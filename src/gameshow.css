@@ -190,7 +190,7 @@ h3, .label, .show-eyebrow, .home-showline {
 .wheel-result { border-radius: 2px; font-family: var(--display); font-size: 27px; color: var(--on-dark); background: var(--stage); border: 1px dashed var(--gold); text-transform: uppercase; }
 .spin-wheel-container { gap: 20px; }
 
-/* The same stage graphics run through all fifteen minigames. */
+/* The same stage graphics run through all minigames. */
 .mg-header { width: 100%; text-align: left; padding: 0 0 17px; border-bottom: 1px solid var(--border); }
 .mg-brand { font: 700 20px var(--display); text-transform: uppercase; color: var(--stage); letter-spacing: .5px; margin-bottom: 20px; }
 .mg-title { color: var(--stage); font-size: 42px; }

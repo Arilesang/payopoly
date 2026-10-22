@@ -8,23 +8,27 @@ export const PETIT_BAC_LETTERS = 'ABCDEFGHIJLMNOPQRSTU'.split('');
 
 // Only minigames that are actually implemented appear on the wheel.
 export const MINIGAMES = {
-  duel: ['Petit Bac', 'Trivia', 'Punchline', 'Rimes Rapides'],
+  duel: ['Petit Bac', 'Trivia', 'Punchline', 'Rimes Rapides', 'Mission Impossible'],
   all:  ['Mimes', 'Trivia', 'Pictionary', 'Sondage Éclair', 'Mot Interdit',
-         'Bluff', 'Le Curseur', 'Qui a écrit ça', 'Croquis Croisés'],
+         'Bluff', 'Le Curseur', 'Qui a écrit ça', 'Croquis Croisés',
+         'Choix Unique', 'Code Commun', 'Mémo Flash'],
   solo: ['Petit Bac', 'Mot Melangés'],
 };
 
 // The physical board has three spaces — Solo / Duel / ALL — so the three turn
 // types stay as they are. `kind` records what actually happens at the table:
 // one performer with an audience (showcase) versus everyone playing at once
-// (melee). ALL now holds six melee games to three showcase, so the wheel
-// already leans two-to-one toward melee without any thumb on the scale.
+// (melee). The ALL wheel favors simultaneous games over showcase games.
 //
 // minPlayers is the size below which a game genuinely cannot run — not the
 // size at which it plays best. Every game shows on the wheel as soon as it
 // works, and the only thing that raises the floor above two is needing a
 // spectator to vote, since a duel with nobody watching can never resolve.
 export const MINIGAME_META = {
+  'duel:Mission Impossible': { kind: 'duel', minPlayers: 3 }, // two actors and at least one judge
+  'all:Choix Unique':    { kind: 'melee', minPlayers: 2 },
+  'all:Code Commun':    { kind: 'melee', minPlayers: 2 },
+  'all:Mémo Flash':     { kind: 'melee', minPlayers: 2 },
   'duel:Petit Bac':      { kind: 'duel',     minPlayers: 3 },  // anonymous voting; no self-votes
   'duel:Trivia':         { kind: 'duel',     minPlayers: 2 },
   'duel:Punchline':      { kind: 'duel',     minPlayers: 3 },  // spectators vote

@@ -28,7 +28,16 @@ import QuiAEcrit      from './QuiAEcrit';
 import RimesRapides   from './RimesRapides';
 import CroquisCroises from './CroquisCroises';
 
+import ChoixUnique from './ChoixUnique';
+import MissionImpossible from './MissionImpossible';
+import CodeCommun from './CodeCommun';
+import MemoFlash from './MemoFlash';
+
 const COMPONENTS = {
+  'all:Choix Unique': ChoixUnique,
+  'duel:Mission Impossible': MissionImpossible,
+  'all:Code Commun': CodeCommun,
+  'all:Mémo Flash': MemoFlash,
   'duel:Petit Bac':      PetitBacDuel,
   'duel:Trivia':         TriviaDuel,
   'duel:Punchline':      Punchline,

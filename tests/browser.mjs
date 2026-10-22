@@ -53,7 +53,7 @@ try {
   assert.equal(await page.getByRole('dialog').count(), 0);
   assert.equal(await page.getByRole('button', { name: /Rankings/ }).evaluate(el => el === document.activeElement), true);
   // Seed each implemented minigame at the same actual route and exercise the intro and dice.
-  const variants = [['solo','Petit Bac'],['duel','Petit Bac'],['duel','Trivia'],['all','Trivia'],['all','Mimes'],['all','Pictionary'],['solo','Mot Melangés'],['all','Sondage Éclair'],['all','Mot Interdit'],['duel','Punchline'],['all','Bluff'],['all','Le Curseur'],['all','Qui a écrit ça'],['duel','Rimes Rapides'],['all','Croquis Croisés']];
+  const variants = [['solo','Petit Bac'],['duel','Petit Bac'],['duel','Trivia'],['all','Trivia'],['all','Mimes'],['all','Pictionary'],['solo','Mot Melangés'],['all','Sondage Éclair'],['all','Mot Interdit'],['duel','Punchline'],['all','Bluff'],['all','Le Curseur'],['all','Qui a écrit ça'],['duel','Rimes Rapides'],['all','Croquis Croisés'],['all','Choix Unique'],['duel','Mission Impossible'],['all','Code Commun'],['all','Mémo Flash']];
   for (const [type, name] of variants) {
     await patchRoom(r => {
       r.players.spectator = { name: 'Spectator', points: 0, categories: ['Animals'] };

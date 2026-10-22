@@ -1,4 +1,8 @@
 export default {
+  "Choix Unique": "Unique Choice",
+  "Mission Impossible": "Mission Impossible",
+  "Code Commun": "Shared Code",
+  "Mémo Flash": "Flash Memory",
   "Égalité": "Tie", "Aucune bonne réponse": "No correct answers",
   "Bluff": "Bluff",
   "Tout le monde ment !": "Everyone bluffs!",

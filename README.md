@@ -1,6 +1,6 @@
 # PayoPoly
 
-A phone-friendly party game with 15 minigame variants, French and English interfaces, and AI-generated content with curated offline-service backups.
+A phone-friendly party game with 19 minigame variants, French and English interfaces, and AI-generated content with curated offline-service backups.
 
 ## Run locally
 
@@ -27,6 +27,15 @@ For a local two-player preview without Firebase or API requests, run `npm run de
 - Disconnected hosts are replaced after a five-second grace period by a connected player. Presence tracks browser connections separately, with heartbeats and Firebase `onDisconnect`. Games keep each participant's seat through reloads, and typing the same name on another device reclaims a disconnected seat. New players can join a running game: they are added to the end of the turn order with one turn for each remaining round.
 - Final standings and rematches retain the room and players but reset scores and session state.
 
+The wheel also includes four short party rounds with curated content in both languages:
+
+- **Choix Unique** (Everyone, 40 seconds): secretly choose a lane paying 50%, 75% or 100% of the die; only a lane’s sole occupant scores.
+- **Mission Impossible** (Duel + audience, up to 75 seconds): two actors receive separate secret objectives in one improvised scene. The audience judges each mission; successful actors share the die if both succeed. Requires at least three players.
+- **Code Commun** (Everyone, 65 seconds): combine private clues to solve one shared code with three team attempts. Success rewards every participant.
+- **Mémo Flash** (Everyone, 40 seconds): study a randomized illustrated scene for 15 seconds, then answer three visual questions in 25 seconds. Each correct answer earns a third of the die.
+
+These rounds persist their participants, content, submissions and phase deadlines. Late submissions are rejected, and the active controller advances expired phases after reconnecting.
+
 ## Validation
 
 ```sh
@@ -35,8 +44,8 @@ npm test
 npm run build
 ```
 
-For the browser checks, start Vite (`npx vite --host 127.0.0.1 --port 5173`) and run `npm run test:browser` in another terminal. The runner defaults to `/usr/bin/chromium`; set `PAYOPOLY_CHROMIUM` to your browser binary and `PAYOPOLY_TEST_URL` if Vite runs elsewhere.
+For the browser checks, start Vite (`npx vite --host 127.0.0.1 --port 5173`) and run `npm run test:browser` in another terminal. Run `npm run test:party-games` for the four new games’ three-player privacy, timeout, reload, scoring and mobile checks. The runner defaults to `/usr/bin/chromium`; set `PAYOPOLY_CHROMIUM` to your browser binary and `PAYOPOLY_TEST_URL` if Vite runs elsewhere.
 
-Browser checks intercept Firebase with a test-only adapter and intercept AI requests, so they do not create production rooms or spend API credits. They cover all 15 intros/dice/help flows, creation, room settings, invite errors, resuming a seat, trivia reloads and timeouts, fallback content, final standings, rematches, host transfer and mobile layout. Unit checks cover the shared session/scoring rules and content validation.
+Browser checks intercept Firebase with a test-only adapter and intercept AI requests, so they do not create production rooms or spend API credits. They cover all 19 intros/dice/help flows, creation, room settings, invite errors, resuming a seat, trivia reloads and timeouts, fallback content, final standings, rematches, host transfer and mobile layout. Unit checks cover the shared session/scoring rules and content validation.
 
 Before publishing, verify real multi-device behavior against the deployment's Firebase access rules, including transactions and presence writes. Those external permissions are not represented by the simulated browser database.

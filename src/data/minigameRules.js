@@ -8,6 +8,154 @@
 // player count is read from MINIGAME_META instead of being retyped here.
 
 export const MINIGAME_RULES = [
+{
+  "id": "all:Choix Unique",
+  "type": "all",
+  "emoji": "💎",
+  "name": "Choix Unique",
+  "timer": "40 s",
+  "tagline": {
+    "fr": "Une voie, une récompense : seul, tu gagnes ; à plusieurs, tout disparaît.",
+    "en": "One lane, one reward: alone you win; together you collide."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer la récompense maximale.",
+      "en": "Roll the die to set the maximum reward."
+    },
+    {
+      "fr": "Tout le monde choisit en secret une des trois voies en 40 secondes.",
+      "en": "Everyone secretly picks one of three lanes within 40 seconds."
+    },
+    {
+      "fr": "Les voies valent 50 %, 75 % ou 100 % du dé. Ton choix est définitif.",
+      "en": "Lanes pay 50%, 75% or 100% of the die value. Your pick is final."
+    },
+    {
+      "fr": "Les choix sont révélés quand tout le monde a choisi ou à la fin du temps. Seuls les joueurs seuls dans leur voie marquent.",
+      "en": "Picks are revealed when everyone has chosen or time runs out. Only players alone in their lane score."
+    }
+  ],
+  "scoring": {
+    "fr": "Une voie occupée par un seul joueur rapporte sa récompense. Collision ou absence de choix : zéro.",
+    "en": "A lane with one player pays its reward. Collisions and missing picks score zero."
+  },
+  "tip": {
+    "fr": "Le jackpot attire les foules. Ose une voie plus discrète.",
+    "en": "The jackpot draws a crowd. Try a quieter lane."
+  }
+},
+{
+  "id": "duel:Mission Impossible",
+  "type": "duel",
+  "emoji": "🎭",
+  "name": "Mission Impossible",
+  "timer": "15 s + 45 s + 15 s",
+  "tagline": {
+    "fr": "Deux acteurs dans une scène absurde, chacun avec une mission secrète.",
+    "en": "Two actors in an absurd scene, each with a secret mission."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer les points. Il faut deux acteurs et au moins un spectateur.",
+      "en": "Roll the die to set the stakes. You need two actors and at least one spectator."
+    },
+    {
+      "fr": "Chaque acteur découvre son rôle et sa mission privée. La préparation dure au maximum 15 secondes.",
+      "en": "Each actor reads their role and private mission. Preparation lasts at most 15 seconds."
+    },
+    {
+      "fr": "Improvisez ensemble à voix haute pendant 45 secondes. Réussissez vos objectifs sans les annoncer.",
+      "en": "Improvise together aloud for 45 seconds. Complete your objectives without announcing them."
+    },
+    {
+      "fr": "Les missions sont révélées. Le public a 15 secondes pour valider chacune en secret.",
+      "en": "The missions are revealed. The audience has 15 seconds to judge each one in secret."
+    }
+  ],
+  "scoring": {
+    "fr": "Une majorité stricte de oui valide la mission. Un seul succès gagne le dé ; deux succès partagent le dé ; aucun succès ou aucun vote ne rapporte rien.",
+    "en": "A strict yes majority confirms a mission. One success wins the die; two successes split it; no successes or no votes pay nothing."
+  },
+  "tip": {
+    "fr": "Écoute ton partenaire : sa réaction peut être la clé de ta mission.",
+    "en": "Listen to your partner: their reaction might be the key to your mission."
+  }
+},
+{
+  "id": "all:Code Commun",
+  "type": "all",
+  "emoji": "🔐",
+  "name": "Code Commun",
+  "timer": "65 s",
+  "tagline": {
+    "fr": "Chacun détient un indice différent. Un seul code ouvre le coffre pour tous.",
+    "en": "Everyone holds a different clue. One code unlocks the vault for everyone."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer les points de chaque joueur.",
+      "en": "Roll the die to set each player’s reward."
+    },
+    {
+      "fr": "Chacun reçoit une partie des indices sur son téléphone. Vous avez 65 secondes.",
+      "en": "Everyone receives part of the clues on their phone. You have 65 seconds."
+    },
+    {
+      "fr": "Échangez vos indices à voix haute pour reconstruire le code dans l’ordre. Les positions commencent à 1.",
+      "en": "Share your clues aloud to reconstruct the code in order. Positions start at 1."
+    },
+    {
+      "fr": "N’importe qui peut saisir le code du groupe. Vous partagez trois essais, et un seul succès suffit.",
+      "en": "Anyone can enter the group’s code. You share three attempts, and one success is enough."
+    }
+  ],
+  "scoring": {
+    "fr": "Code trouvé : chaque participant gagne le dé. Trois erreurs ou temps écoulé : aucun point.",
+    "en": "Crack the code: every participant earns the die value. Three mistakes or time running out: no points."
+  },
+  "tip": {
+    "fr": "Annonce bien la position et garde les zéros au début du code.",
+    "en": "Say the position clearly and keep leading zeros in the code."
+  }
+},
+{
+  "id": "all:Mémo Flash",
+  "type": "all",
+  "emoji": "🧠",
+  "name": "Mémo Flash",
+  "timer": "15 s + 25 s",
+  "tagline": {
+    "fr": "Un pique-nique impossible. Quinze secondes pour tout voir, puis place aux souvenirs.",
+    "en": "An impossible picnic. Fifteen seconds to see it all, then trust your memory."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer la récompense maximale.",
+      "en": "Roll the die to set the maximum reward."
+    },
+    {
+      "fr": "Observez la même scène illustrée pendant 15 secondes. Couleurs, objets et quantités changent à chaque tour.",
+      "en": "Study the same illustrated scene for 15 seconds. Colors, objects and quantities vary each round."
+    },
+    {
+      "fr": "L’image disparaît : répondez à trois questions visuelles en 25 secondes.",
+      "en": "The picture disappears: answer three visual questions in 25 seconds."
+    },
+    {
+      "fr": "Validez vos trois réponses en secret, puis découvrez l’image et les bonnes réponses.",
+      "en": "Lock in your three answers secretly, then see the picture and the correct answers."
+    }
+  ],
+  "scoring": {
+    "fr": "Chaque bonne réponse rapporte un tiers du dé. Sans réponses validées : zéro.",
+    "en": "Each correct answer earns one third of the die value. No submitted answers: zero."
+  },
+  "tip": {
+    "fr": "Ne fixe pas seulement les personnages : compte aussi les petits détails.",
+    "en": "Look beyond the characters: count the small details too."
+  }
+},
   // ── SOLO ────────────────────────────────────────────────────────────────
   {
     id: 'solo:Petit Bac',

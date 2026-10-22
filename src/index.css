@@ -1192,3 +1192,34 @@ label { font-size: 14px; font-weight: 650; }
 .bac-answer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
 .bac-answer dt { font-weight: bold; }
 .bac-answer dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Simultaneous party rounds */
+.party-game { gap: 18px; }
+.party-game .card { width: 100%; overflow-wrap: anywhere; }
+.party-game h2 { font-size: 1.3rem; }
+.party-game .countdown-wrap { align-self: center; }
+.lane-options { display: grid; gap: 12px; }
+.lane-option { display: flex; align-items: center; gap: 12px; white-space: normal; text-align: left; }
+.lane-option strong { margin-left: auto; font-variant-numeric: tabular-nums; }
+.lane-icon { font-size: 2rem; }
+.lane-result { border-left: 4px solid var(--border); }
+.lane-winner { border-color: var(--success); }
+.secret-mission, .code-terminal { display: flex; flex-direction: column; gap: 14px; }
+.secret-mission { border: 1px dashed var(--accent); }
+.mission-verdict { display: flex; gap: 12px; margin-top: 12px; }
+.mission-verdict .btn { flex: 1; }
+.mission-result + .mission-result, .memo-answer + .memo-answer { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; }
+.performance-cue { text-align: center; }
+.shared-code { font-family: monospace; font-size: clamp(1.4rem, 5vw, 2rem); letter-spacing: .12em; overflow-wrap: anywhere; min-width: 0; width: 100%; }
+.memo-scene { display: block; width: 100%; height: auto; border-radius: 18px; border: 3px solid var(--border); }
+.memo-question { min-width: 0; margin: 0; }
+.memo-question legend { font-weight: 700; padding: 0 6px; font-size: 1rem; }
+.memo-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.memo-options .btn { min-width: 0; padding: 12px 6px; white-space: normal; }
+/* Keep every visual clue above the fixed rankings ticket during study time. */
+.party-game.party-studying { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: start; align-items: center; gap: 12px; min-height: 0; }
+.party-studying .mg-header { padding-bottom: 0; border: 0; }
+.party-studying .mg-brand, .party-studying .mg-subtitle { display: none; }
+.party-studying .mg-title { font-size: 30px; }
+.party-studying > .memo-scene { grid-column: 1 / -1; grid-row: 2; max-height: calc(100svh - 330px); }
+.party-studying > .card { grid-column: 1 / -1; grid-row: 3; padding: 14px; }

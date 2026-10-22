@@ -1,4 +1,8 @@
 export const ROUND_EXAMPLES = {
+  'all:Choix Unique': ['Deux joueurs au jackpot : zéro. Un joueur au refuge : la moitié du dé.', 'Two players in the jackpot: zero. One in the hideaway: half the die.'],
+  'duel:Mission Impossible': ['Vends un grille-pain hanté et fais dire « remboursement » au client.', 'Sell a haunted toaster and make the customer say “refund”.'],
+  'all:Code Commun': ['« Position 1 + 2 = 9 » donne 7 en première position. Assemblez tous les indices.', '“Position 1 + 2 = 9” means the first digit is 7. Combine every clue.'],
+  'all:Mémo Flash': ['Le pingouin avait-il un chapeau rose, jaune ou bleu ?', 'Was the penguin’s hat pink, yellow or blue?'],
   'solo:Petit Bac': ['Lettre B, catégorie Animaux → Baleine.', 'Letter B, Animals → Bear.'],
   'duel:Petit Bac': ['Lettre B, catégorie Animaux → Baleine.', 'Letter B, Animals → Bear.'],
   'solo:Mot Melangés': ['OTBOR → ROBOT.', 'OTBOR → ROBOT.'],

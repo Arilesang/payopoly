@@ -14,7 +14,7 @@ export default function RoundIntro() {
   const rule = MINIGAME_RULES.find(r => r.id === key);
   const performer = mg.tPlayerId === myPlayerId;
   const opponent = mg.pPlayerId === myPlayerId;
-  const simultaneous = ['Trivia', 'Sondage Éclair', 'Bluff', 'Qui a écrit ça', 'Croquis Croisés'].includes(mg.name) && mg.type === 'all';
+  const simultaneous = ['Trivia', 'Sondage Éclair', 'Bluff', 'Qui a écrit ça', 'Croquis Croisés', 'Choix Unique', 'Code Commun', 'Mémo Flash'].includes(mg.name) && mg.type === 'all';
   const ready = mg.rulesReady?.[myPlayerId];
   return <section className="page page-center">
     <h1>{rule?.emoji} {tr(rule?.name ?? mg.name)}</h1>
