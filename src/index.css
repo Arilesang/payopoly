@@ -1223,3 +1223,20 @@ label { font-size: 14px; font-weight: 650; }
 .party-studying .mg-title { font-size: 30px; }
 .party-studying > .memo-scene { grid-column: 1 / -1; grid-row: 2; max-height: calc(100svh - 330px); }
 .party-studying > .card { grid-column: 1 / -1; grid-row: 3; padding: 14px; }
+
+.wheel-game-list { width: 100%; text-align: left; }
+.wheel-game-list h3 { font-size: 1.05rem; }
+.wheel-game-list > p { margin: 6px 0 10px; font-size: 13px; }
+.wheel-game-list ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.wheel-game-link { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; cursor: pointer; }
+.wheel-game-link > span:nth-child(2) { flex: 1; min-width: 0; }
+.wheel-game-link strong, .wheel-game-link small { display: block; overflow-wrap: anywhere; }
+.wheel-game-link small { color: var(--text-muted); margin-top: 3px; font-size: 12px; }
+.wheel-game-link:hover, .wheel-game-link:focus-visible { border-color: var(--accent); }
+.wheel-game-unavailable { border-style: dashed; }
+.rule-explanation p { font-size: 14px; line-height: 1.6; margin-top: 8px; }
+.rule-note-example { background: var(--bg-card2); border: 1px solid var(--border); }
+.party-duel-outcome { font-size: 1.2rem; font-weight: 700; text-align: center; }
+.code-teams { margin-top: 12px; font-size: 13px; }
+.code-teams p + p { margin-top: 8px; }
+.party-duel.party-studying > .memo-scene { max-height: calc(100svh - 480px); }

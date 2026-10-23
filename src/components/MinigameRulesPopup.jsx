@@ -9,6 +9,7 @@ import { useLang } from '../context/LangContext';
 import { MINIGAME_RULES } from '../data/minigameRules';
 import { scoringRule } from '../lib/rules';
 import { MINIGAME_META } from '../gameConfig';
+import { ROUND_EXAMPLES } from '../data/roundExamples';
 
 const ALL = '*';                              // "no filter", distinct from the 'all' type
 const FILTERS = [ALL, 'solo', 'duel', 'all'];
@@ -139,8 +140,12 @@ function RuleCard({ game, lang, t, index, open, onToggle, cardRef }) {
         <span className="rule-chip">⏱️ {game.timer}</span>
       </div>
 
-      <div className="rule-body">
+      <div className="rule-body" aria-hidden={!open} inert={!open}>
         <div className="rule-body-inner">
+          {game.explanation && <section className="rule-explanation">
+            <h3 className="rule-section-label">{t('rules.explanation')}</h3>
+            <p>{game.explanation[lang]}</p>
+          </section>}
           <p className="rule-section-label">{t('rules.howItWorks')}</p>
           <ol className="rule-steps">
             {game.steps.map((step, i) => (
@@ -150,6 +155,11 @@ function RuleCard({ game, lang, t, index, open, onToggle, cardRef }) {
               </li>
             ))}
           </ol>
+
+          {ROUND_EXAMPLES[game.id] && <div className="rule-note rule-note-example">
+            <span className="rule-note-icon" aria-hidden="true">🎬</span>
+            <span><strong>{t('rules.example')}</strong>{ROUND_EXAMPLES[game.id][lang === 'en' ? 1 : 0]}</span>
+          </div>}
 
           <div className="rule-note rule-note-score">
             <span className="rule-note-icon">🏆</span>

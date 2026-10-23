@@ -67,8 +67,14 @@ export default function SpinWheel({ items, onResult, t, forcedResult = null, dis
       ctx.fillStyle = i % COLORS.length === 0 || i % COLORS.length === 4 ? PAPER : INK;
       ctx.font = `bold ${items.length > 8 ? 10 : 12}px sans-serif`;
       const translated = tr(item);
-      const label = translated.length > 14 ? translated.slice(0, 13) + '…' : translated;
-      ctx.fillText(label, radius - 10, 4);
+      const lines = [''];
+      for (const word of translated.split(' ')) {
+        const last = lines.length - 1;
+        const candidate = lines[last] ? `${lines[last]} ${word}` : word;
+        if (lines[last] && ctx.measureText(candidate).width > radius - 38) lines.push(word);
+        else lines[last] = candidate;
+      }
+      lines.forEach((line, row) => ctx.fillText(line, radius - 10, 4 + (row - (lines.length - 1) / 2) * 11));
       ctx.restore();
     });
 

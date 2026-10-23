@@ -8,7 +8,8 @@ export const PETIT_BAC_LETTERS = 'ABCDEFGHIJLMNOPQRSTU'.split('');
 
 // Only minigames that are actually implemented appear on the wheel.
 export const MINIGAMES = {
-  duel: ['Petit Bac', 'Trivia', 'Punchline', 'Rimes Rapides', 'Mission Impossible'],
+  duel: ['Petit Bac', 'Trivia', 'Punchline', 'Rimes Rapides', 'Mission Impossible',
+         'Choix Unique', 'Code Commun', 'Mémo Flash'],
   all:  ['Mimes', 'Trivia', 'Pictionary', 'Sondage Éclair', 'Mot Interdit',
          'Bluff', 'Le Curseur', 'Qui a écrit ça', 'Croquis Croisés',
          'Choix Unique', 'Code Commun', 'Mémo Flash'],
@@ -26,6 +27,9 @@ export const MINIGAMES = {
 // spectator to vote, since a duel with nobody watching can never resolve.
 export const MINIGAME_META = {
   'duel:Mission Impossible': { kind: 'duel', minPlayers: 3 }, // two actors and at least one judge
+  'duel:Choix Unique':  { kind: 'duel', minPlayers: 2 },
+  'duel:Code Commun':   { kind: 'duel', minPlayers: 2 },
+  'duel:Mémo Flash':    { kind: 'duel', minPlayers: 2 },
   'all:Choix Unique':    { kind: 'melee', minPlayers: 2 },
   'all:Code Commun':    { kind: 'melee', minPlayers: 2 },
   'all:Mémo Flash':     { kind: 'melee', minPlayers: 2 },
@@ -49,7 +53,7 @@ export const MINIGAME_META = {
 // Duels with an objective result, where spectators can call the winner before
 // play starts. Judged duels (Petit Bac, Punchline) are left out: a spectator who
 // bet on one side would then vote for it.
-export const PREDICTION_DUELS = ['Trivia', 'Rimes Rapides'];
+export const PREDICTION_DUELS = ['Trivia', 'Rimes Rapides', 'Choix Unique', 'Mémo Flash'];
 
 // Phases before a duel's outcome can be read off the screen. Predictions lock
 // once the minigame moves past these.

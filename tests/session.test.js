@@ -173,3 +173,18 @@ test('room codes avoid look-alikes, and typed look-alikes still find older rooms
   assert.deepEqual(codeVariants('1X0'), ['1X0', '1XO', 'IX0', 'IXO', 'LX0', 'LXO']);
   assert.equal(codeVariants('000000').length, 64);
 });
+
+test('wheel catalog shows unavailable games with a reason while excluding them from selectable slices', async () => {
+  const { wheelCatalog } = await import('../src/lib/session.js');
+  const r = room();
+  const mission = wheelCatalog(r, 'duel').find(entry => entry.name === 'Mission Impossible');
+  assert.deepEqual(mission, { name: 'Mission Impossible', minPlayers: 3, available: false, reason: 'players' });
+  assert.ok(!wheelGames(r, 'duel').includes(mission.name));
+  for (const name of ['Choix Unique', 'Code Commun', 'Mémo Flash']) assert.ok(wheelCatalog(r, 'duel').find(e => e.name === name).available);
+  r.players.c = {};
+  assert.ok(wheelCatalog(r, 'duel').find(entry => entry.name === mission.name).available);
+  r.history = [{ key: 'duel:Mission Impossible' }];
+  assert.equal(wheelCatalog(r, 'duel').find(entry => entry.name === mission.name).reason, 'repeat');
+  r.settings.preset = 'quick';
+  assert.equal(wheelCatalog(r, 'all').find(entry => entry.name === 'Croquis Croisés').reason, 'preset');
+});

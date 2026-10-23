@@ -13,14 +13,24 @@ export default function PartyFrame({ children, results }) {
   const tr = useText();
   const mg = game.currentMinigame;
   const finished = mg.phase === 'results';
-  return <section className={`page page-minigame party-game party-${mg.phase}`}>
-    <MgHeader title={tr(mg.name)} subtitle={mg.type === 'duel' ? say('Deux acteurs, deux missions secrètes', 'Two actors, two secret missions') : say('Tout le monde joue !', 'Everyone plays!')} />
+  const subtitle = mg.type !== 'duel' ? say('Tout le monde joue !', 'Everyone plays!')
+    : mg.name === 'Mission Impossible' ? say('Deux acteurs, deux missions secrètes', 'Two actors, two secret missions')
+    : mg.name === 'Code Commun' ? say('Deux équipes, une course au code', 'Two teams, one code race')
+    : `${game.players[mg.tPlayerId]?.name} ⚔️ ${game.players[mg.pPlayerId]?.name}`;
+  return <section className={`page page-minigame party-game party-${mg.type} party-${mg.phase}`}>
+    <MgHeader title={tr(mg.name)} subtitle={subtitle} />
     {mg.phase === 'dice' ? isTPlayer ? <DiceRoll onResult={diceValue => updateMinigame({
-      ...startPartyGame(mg.name, Object.keys(game.players), game.settings?.language),
+      ...startPartyGame(mg.name, Object.keys(game.players), game.settings?.language, Math.random, mg.type === 'duel' ? [mg.tPlayerId, mg.pPlayerId] : null),
       diceValue, countdownStartedAt: now(),
     })} /> : <Waiting text={say('En attente du lancer de dé...', 'Waiting for the die roll...')} /> : <>
       {PARTY_SECONDS[mg.phase] && <Countdown key={mg.phase} startedAt={mg.phaseStartedAt} total={PARTY_SECONDS[mg.phase]} />}
-      {finished ? results : children}
+      {finished ? <>
+        {mg.type === 'duel' && mg.name !== 'Mission Impossible' && <p className="party-duel-outcome" role="status">
+          {mg.winnerId ? say(`🏆 ${game.players[mg.winnerId]?.name} remporte le duel`, `🏆 ${game.players[mg.winnerId]?.name} wins the duel`)
+            : mg.winnerIds?.length > 1 ? say('Égalité · points partagés', 'Tie · points shared') : say('Aucun vainqueur', 'No winner')}
+        </p>}
+        {results}
+      </> : children}
       {finished && (isController
         ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame()}>{say('Continuer', 'Continue')}</button>
         : <Waiting text={say('En attente du tour suivant…', 'Waiting for the next turn…')} />)}

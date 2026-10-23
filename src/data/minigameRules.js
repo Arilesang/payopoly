@@ -9,11 +9,138 @@
 
 export const MINIGAME_RULES = [
 {
+  "id": "duel:Choix Unique",
+  "type": "duel",
+  "emoji": "💎",
+  "name": "Choix Unique",
+  "timer": "40 s",
+  "tagline": {
+    "fr": "Deux choix cachés. Évite la collision et vise la meilleure récompense.",
+    "en": "Two hidden picks. Avoid a collision and aim for the bigger reward."
+  },
+  "explanation": {
+    "fr": "Seuls les deux duellistes choisissent une voie. S’ils prennent la même, ils se bloquent et ne marquent rien. S’ils prennent deux voies différentes, chacun reçoit la récompense de sa voie, et celui qui gagne le plus remporte le duel. Les spectateurs peuvent pronostiquer le vainqueur avant les choix.",
+    "en": "Only the two duellists pick a lane. If they choose the same one, they collide and score nothing. If they pick different lanes, each earns their lane’s reward and the bigger reward wins the duel. Spectators can predict the winner before picks begin."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer les récompenses.",
+      "en": "Roll the die to set the rewards."
+    },
+    {
+      "fr": "Les deux duellistes ont 40 secondes pour choisir une voie en secret.",
+      "en": "Both duellists have 40 seconds to pick a lane secretly."
+    },
+    {
+      "fr": "Refuge : 50 % du dé. Raccourci : 75 %. Jackpot : 100 %. Un choix validé est définitif.",
+      "en": "Hideaway: 50% of the die. Shortcut: 75%. Jackpot: 100%. Submitted picks are final."
+    },
+    {
+      "fr": "Révélez ensemble les choix : une collision annule les deux récompenses ; sinon la plus grande récompense gagne le duel.",
+      "en": "Reveal the picks together: a collision cancels both rewards; otherwise the bigger reward wins the duel."
+    }
+  ],
+  "scoring": {
+    "fr": "Chaque joueur seul dans sa voie gagne sa récompense. Le meilleur gain positif remporte le duel. Collision ou absence de choix : zéro.",
+    "en": "Each player alone in their lane earns its reward. The highest positive reward wins the duel. Collision or no pick: zero."
+  },
+  "tip": {
+    "fr": "Choisir le jackpot garantit seulement que ton adversaire peut te bloquer.",
+    "en": "Picking the jackpot only guarantees that your opponent can block you."
+  }
+},
+{
+  "id": "duel:Code Commun",
+  "type": "duel",
+  "emoji": "🔐",
+  "name": "Code Commun",
+  "timer": "65 s",
+  "tagline": {
+    "fr": "Deux capitaines, deux équipes : qui ouvrira le coffre en premier ?",
+    "en": "Two captains, two teams: who will open the vault first?"
+  },
+  "explanation": {
+    "fr": "Chaque duelliste dirige une équipe ; les autres joueurs sont répartis entre les deux. Les équipes cherchent le même code et disposent chacune de tous les indices, répartis sur les téléphones de leurs membres. Partagez vos indices avec votre capitaine : lui seul peut saisir une réponse. À deux joueurs, chaque capitaine résout seul ses indices.",
+    "en": "Each duellist leads a team; the other players are split between the two. Both teams seek the same code and each has a complete set of clues, distributed across its members’ phones. Share your clues with your captain: only the captain can submit a guess. With two players, each captain solves their own clues alone."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer la récompense de chaque membre de l’équipe gagnante.",
+      "en": "Roll the die to set each winning teammate’s reward."
+    },
+    {
+      "fr": "Chaque joueur reçoit ses indices privés et le nom de son capitaine. Vous avez 65 secondes.",
+      "en": "Every player receives private clues and their captain’s name. You have 65 seconds."
+    },
+    {
+      "fr": "Communiquez les positions et les chiffres à votre capitaine. Chaque équipe dispose de trois essais distincts.",
+      "en": "Share positions and digits with your captain. Each team has three separate attempts."
+    },
+    {
+      "fr": "Le premier capitaine qui saisit le bon code gagne immédiatement. Les essais de l’autre équipe restent cachés.",
+      "en": "The first captain to enter the correct code wins immediately. The opposing team’s guesses stay hidden."
+    }
+  ],
+  "scoring": {
+    "fr": "Chaque membre de l’équipe gagnante gagne le dé. Son capitaine remporte le duel. Aucun code trouvé avant la fin : aucun point.",
+    "en": "Every member of the winning team earns the die value. Their captain wins the duel. No code found before time runs out: no points."
+  },
+  "tip": {
+    "fr": "Annonce la position avant le chiffre, et n’oublie pas les zéros en début de code.",
+    "en": "Say the position before the digit, and keep leading zeros in the code."
+  }
+},
+{
+  "id": "duel:Mémo Flash",
+  "type": "duel",
+  "emoji": "🧠",
+  "name": "Mémo Flash",
+  "timer": "15 s + 25 s",
+  "tagline": {
+    "fr": "La même image, deux mémoires : qui se souvient le mieux ?",
+    "en": "The same picture, two memories: who remembers more?"
+  },
+  "explanation": {
+    "fr": "Les deux duellistes observent exactement la même scène pendant quinze secondes. L’image disparaît, puis chacun répond aux trois mêmes questions en vingt-cinq secondes. Le nombre de bonnes réponses décide du duel ; la rapidité ne départage pas les égalités. Les spectateurs observent et peuvent pronostiquer avant l’étude de l’image.",
+    "en": "Both duellists study exactly the same scene for fifteen seconds. The picture disappears, then each answers the same three questions within twenty-five seconds. The number of correct answers decides the duel; speed does not break ties. Spectators watch and can predict before the study period."
+  },
+  "steps": [
+    {
+      "fr": "Lance le dé pour fixer les points en jeu.",
+      "en": "Roll the die to set the stakes."
+    },
+    {
+      "fr": "Observez la scène illustrée pendant 15 secondes. Repérez les couleurs, objets et quantités.",
+      "en": "Study the illustrated scene for 15 seconds. Notice colors, objects and quantities."
+    },
+    {
+      "fr": "Sans revoir l’image, les deux duellistes répondent en secret à trois questions et valident leurs réponses en 25 secondes.",
+      "en": "Without seeing the picture again, both duellists secretly answer three questions and submit within 25 seconds."
+    },
+    {
+      "fr": "Révélez les réponses et comparez les scores. Le meilleur score positif gagne ; les ex æquo partagent le dé.",
+      "en": "Reveal answers and compare scores. The highest positive score wins; tied leaders split the die."
+    }
+  ],
+  "scoring": {
+    "fr": "Le meilleur score positif gagne le dé. Égalité positive : moitié du dé chacun. Zéro bonne réponse ou réponses non validées : aucun point.",
+    "en": "The highest positive score wins the die. A positive tie pays half the die each. Zero correct answers or no submitted answers earns nothing."
+  },
+  "tip": {
+    "fr": "Le nombre de bonnes réponses compte, pas la vitesse : observe et réfléchis.",
+    "en": "Correct answers matter, not speed: observe and think."
+  }
+},
+{
   "id": "all:Choix Unique",
   "type": "all",
   "emoji": "💎",
   "name": "Choix Unique",
   "timer": "40 s",
+  "explanation": {
+    "fr": "Tout le monde choisit une voie sur son téléphone, sans voir les choix des autres. Une voie rapporte uniquement si elle contient un seul joueur. Le dé fixe les trois récompenses : la moitié au refuge, les trois quarts au raccourci, et la totalité au jackpot.",
+    "en": "Everyone chooses a lane on their phone without seeing the other picks. A lane pays only when exactly one player chose it. The die sets the three rewards: half for the hideaway, three quarters for the shortcut, and the full value for the jackpot."
+  },
   "tagline": {
     "fr": "Une voie, une récompense : seul, tu gagnes ; à plusieurs, tout disparaît.",
     "en": "One lane, one reward: alone you win; together you collide."
@@ -51,6 +178,10 @@ export const MINIGAME_RULES = [
   "emoji": "🎭",
   "name": "Mission Impossible",
   "timer": "15 s + 45 s + 15 s",
+  "explanation": {
+    "fr": "Le challenger et son adversaire improvisent la même scène à voix haute. Chacun reçoit un rôle et un objectif que les autres ne voient pas : provoquer un mot, un geste ou une réaction chez son partenaire. Après la scène, les objectifs sont révélés et les spectateurs jugent séparément chaque mission. Il faut donc au moins trois joueurs.",
+    "en": "The challenger and opponent improvise the same scene aloud. Each receives a role and an objective hidden from the others: prompt a word, gesture or reaction from their partner. After the scene, the objectives are revealed and spectators judge each mission separately. At least three players are required."
+  },
   "tagline": {
     "fr": "Deux acteurs dans une scène absurde, chacun avec une mission secrète.",
     "en": "Two actors in an absurd scene, each with a secret mission."
@@ -88,6 +219,10 @@ export const MINIGAME_RULES = [
   "emoji": "🔐",
   "name": "Code Commun",
   "timer": "65 s",
+  "explanation": {
+    "fr": "Tous les joueurs forment une seule équipe. Les chiffres du code sont répartis en indices privés : personne ne voit les indices des autres. Annoncez les positions et résolvez les petites énigmes pour reconstituer le code complet. N’importe qui peut saisir la réponse, mais les trois essais sont partagés par toute la table.",
+    "en": "Everyone forms one team. The code’s digits are distributed as private clues: nobody sees another player’s clues. Share the positions and solve the small puzzles to reconstruct the complete code. Anyone can enter the answer, but the whole table shares three attempts."
+  },
   "tagline": {
     "fr": "Chacun détient un indice différent. Un seul code ouvre le coffre pour tous.",
     "en": "Everyone holds a different clue. One code unlocks the vault for everyone."
@@ -125,6 +260,10 @@ export const MINIGAME_RULES = [
   "emoji": "🧠",
   "name": "Mémo Flash",
   "timer": "15 s + 25 s",
+  "explanation": {
+    "fr": "Tous les téléphones montrent la même illustration absurde pendant quinze secondes. Ensuite, l’image est retirée et chacun répond à trois questions sur ses couleurs, objets ou quantités. Les souvenirs sont validés en secret ; l’image et les bonnes réponses reviennent seulement au résultat.",
+    "en": "Every phone shows the same absurd illustration for fifteen seconds. Then the picture disappears and everyone answers three questions about its colors, objects or quantities. Memories are submitted secretly; the picture and correct answers return only with the results."
+  },
   "tagline": {
     "fr": "Un pique-nique impossible. Quinze secondes pour tout voir, puis place aux souvenirs.",
     "en": "An impossible picnic. Fifteen seconds to see it all, then trust your memory."

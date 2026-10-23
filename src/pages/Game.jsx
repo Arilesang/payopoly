@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
 import SpinWheel from '../components/SpinWheel';
+import WheelGameList from '../components/WheelGameList';
 import CategoryPopup from '../components/CategoryPopup';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
 import Results from './Results';
@@ -290,6 +291,7 @@ function TurnPanel({ turn, players, myPlayerId, t, onSelectType, onSpinResult, o
           onStart={(value, duration) => startWheelSpin(games, value, duration)}
           isActor={isActor}
         />
+        <WheelGameList game={game} type={turn.minigameType} />
       </div>
     );
   }

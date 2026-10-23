@@ -18,9 +18,9 @@ export default function RoundIntro() {
   const ready = mg.rulesReady?.[myPlayerId];
   return <section className="page page-center">
     <h1>{rule?.emoji} {tr(rule?.name ?? mg.name)}</h1>
-    <p className="role-badge">{simultaneous ? say('Tu joues avec tout le monde', 'You play with everyone') : performer ? say('Tu es le joueur principal', 'You are the lead player') : opponent ? say('Tu es l’adversaire', 'You are the opponent') : say('Tu observes, devines ou votes', 'You watch, guess or vote')}</p>
+    <p className="role-badge">{mg.name === 'Code Commun' && mg.type === 'duel' ? (performer || opponent ? say('Tu diriges une équipe', 'You lead a team') : say('Tu aides une des deux équipes', 'You help one of the two teams')) : simultaneous ? say('Tu joues avec tout le monde', 'You play with everyone') : performer ? say('Tu es le joueur principal', 'You are the lead player') : opponent ? say('Tu es l’adversaire', 'You are the opponent') : say('Tu observes, devines ou votes', 'You watch, guess or vote')}</p>
     {mg.type === 'duel' && mg.pPlayerId && <FaceOff />}
-    <div className="card"><h2>{say('Comment jouer', 'How to play')}</h2><p>{rule?.tagline[lang]}</p>
+    <div className="card"><h2>{say('Comment jouer', 'How to play')}</h2><p>{rule?.explanation?.[lang] ?? rule?.tagline[lang]}</p>
       <ol className="intro-steps">{rule?.steps.slice(1, 4).map((step, i) => <li key={i}>{step[lang]}</li>)}</ol>
       <p><strong>{say('Exemple : ', 'Example: ')}</strong>{ROUND_EXAMPLES[key]?.[lang === 'en' ? 1 : 0]}</p>
       <p className="muted">{scoringRule(key, lang)}</p>

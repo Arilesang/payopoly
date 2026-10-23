@@ -26,6 +26,9 @@ export default function ChoixUnique() {
   </>}>
     <div className="card"><h2>{say('Choisis ta voie en secret', 'Choose your lane in secret')}</h2>
       <p>{say('Tu marques seulement si tu es seul dans ta voie. Plus la récompense est grande, plus elle attire !', 'You score only if you are alone in your lane. Bigger rewards draw a bigger crowd!')}</p></div>
+    {mg.type === 'duel' && <p>{ids.includes(myPlayerId)
+      ? say('Gagne plus que ton adversaire pour remporter le duel. Même voie : collision, aucun point.', 'Earn more than your opponent to win the duel. Same lane: collision, no points.')
+      : say('Les deux duellistes choisissent en secret. Observe le duel !', 'The two duellists choose in secret. Watch the duel!')}</p>}
     <div className="lane-options">{LANE_LABELS.map((label, lane) => <button key={lane}
       className={`btn btn-category lane-option ${mine === lane ? 'voted' : ''}`} disabled={mine !== undefined || !ids.includes(myPlayerId)}
       onClick={() => setMyEntry('lanePicks', lane)}>

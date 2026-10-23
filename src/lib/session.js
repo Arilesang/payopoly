@@ -1,4 +1,4 @@
-import { MINIGAME_META, BOUNTY_SHARE, PREDICTION_DUELS, availableMinigames } from '../gameConfig.js';
+import { MINIGAMES, MINIGAME_META, BOUNTY_SHARE, PREDICTION_DUELS, availableMinigames } from '../gameConfig.js';
 import { shuffle } from '../utils.js';
 
 export const DEFAULT_SETTINGS = { rounds: null, preset: 'classic', language: 'fr', scoring: 'dice' };
@@ -23,6 +23,18 @@ export function wheelGames(room, type) {
   const last = room.history?.slice(-1)[0];
   const withoutRepeat = names.filter(n => `${type}:${n}` !== last?.key);
   return withoutRepeat.length ? withoutRepeat : names;
+}
+// Keep unavailable games discoverable without letting the wheel select them.
+export function wheelCatalog(room, type) {
+  const eligible = wheelGames(room, type);
+  const playerCount = Object.keys(room.players ?? {}).length;
+  return (MINIGAMES[type] ?? []).map(name => {
+    const minPlayers = MINIGAME_META[`${type}:${name}`]?.minPlayers ?? 2;
+    const available = eligible.includes(name);
+    const reason = available ? null : playerCount < minPlayers ? 'players'
+      : room.history?.at(-1)?.key === `${type}:${name}` ? 'repeat' : 'preset';
+    return { name, minPlayers, available, reason };
+  });
 }
 // The duel's single winner, or null on a tie or when nobody won.
 export function soleWinner(mg) {
@@ -181,7 +193,14 @@ export function roundAwards(room) {
   const mg = room.currentMinigame;
   if (!mg) return {};
   const points = mg.pointsValue ?? 0;
-  if (mg.awards) return cleanAwards(room, mg.awards);
+  if (mg.awards) {
+    const awards = { ...mg.awards };
+    if (mg.type === 'duel') {
+      if (mg.bounty && soleWinner(mg) === mg.tPlayerId && awards[mg.tPlayerId] > 0) awards[mg.tPlayerId] += payoutCap(room, mg) * BOUNTY_SHARE;
+      Object.assign(awards, predictionAwards(room, mg));
+    }
+    return cleanAwards(room, awards);
+  }
   if (mg.winnerIds?.length > 1) return cleanAwards(room, Object.fromEntries(mg.winnerIds.map(id => [id, points / mg.winnerIds.length])));
   if (mg.name === 'Mot Interdit') return mg.foundBy ? cleanAwards(room, { [mg.tPlayerId]: points, [mg.foundBy]: points }) : {};
   const awards = {};

@@ -31,6 +31,9 @@ export default function MemoFlash() {
     </>}
     {mg.phase === 'recalling' && <>
       <h2>{say('De quoi te souviens-tu ?', 'What do you remember?')}</h2>
+      {mg.type === 'duel' && <p>{ids.includes(myPlayerId)
+        ? say('Le meilleur score positif gagne le dé. Égalité : points partagés. Aucun point pour zéro bonne réponse.', 'The highest positive score wins the die. Ties split the points. Zero correct answers earns nothing.')
+        : say('Seuls les duellistes répondent. Les réponses restent cachées jusqu’au résultat.', 'Only the duellists answer. Their answers stay hidden until the results.')}</p>}
       {selected.map((q, i) => <fieldset className="card memo-question" key={q.q} disabled={submitted || !ids.includes(myPlayerId)}>
         <legend>{i + 1}. {q.q}</legend>
         <div className="memo-options">{q.options.map((option, index) => <button type="button" key={option} className={`btn btn-category ${shownAnswers[i] === index ? 'voted' : ''}`} aria-pressed={shownAnswers[i] === index}

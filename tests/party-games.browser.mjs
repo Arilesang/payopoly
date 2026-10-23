@@ -35,9 +35,8 @@ async function patch(updates) {
     localStorage.setItem('payopoly-test-db', JSON.stringify(db)); window.__testEmit?.();
   }), updates);
 }
-async function seed(name, extra = {}) {
+async function seed(name, extra = {}, type = name === 'Mission Impossible' ? 'duel' : 'all') {
   const id = `party:${++serial}`;
-  const type = name === 'Mission Impossible' ? 'duel' : 'all';
   const room = {
     status: 'play', hostId: 'host', settings: { rounds: 3, language: 'en', preset: 'classic', scoring: 'dice' },
     players: Object.fromEntries(ids.map(id => [id, { name: id, points: 0 }])),
@@ -45,7 +44,7 @@ async function seed(name, extra = {}) {
     playerOrder: ids, totalTurns: 9, turnsPlayed: 0,
     currentTurn: { id, playerId: 'host', opponentId: type === 'duel' ? 'guest' : null, phase: 'playing', minigameType: type, minigame: name, startedAt: Date.now() },
     currentMinigame: { id, name, type, tPlayerId: 'host', pPlayerId: type === 'duel' ? 'guest' : null, diceValue: 4, pointsValue: 4,
-      phaseStartedAt: Date.now(), ...startPartyGame(name, ids, 'en', () => 0), ...extra },
+      phaseStartedAt: Date.now(), ...startPartyGame(name, ids, 'en', () => 0, type === 'duel' ? ['host', 'guest'] : null), ...extra },
   };
   await host.evaluate(room => navigator.locks.request('payopoly-test-db', () => {
     localStorage.setItem('payopoly-test-db', JSON.stringify({ games: { PARTY4: room } })); window.__testEmit?.();
@@ -170,12 +169,120 @@ try {
   assert.deepEqual((await state()).currentMinigame.awards, {});
   console.log('PASS flash memory: missing answers deadline');
 
+  // New Duel variants restrict competitive input to the chosen duellists.
+  await seed('Choix Unique', { bets: { spectator: 'host' }, bounty: true }, 'duel');
+  await text(spectator, 'The two duellists choose in secret');
+  assert.equal(await spectator.getByRole('button', { name: /The jackpot/ }).isDisabled(), true);
+  await host.getByRole('button', { name: /The jackpot/ }).click();
+  await guest.getByRole('button', { name: /The hideaway/ }).click();
+  await phase('results');
+  assert.equal((await state()).currentMinigame.winnerId, 'host');
+  assert.deepEqual((await state()).currentMinigame.awards, { host: 4, guest: 2 });
+  await text(host, 'host wins the duel');
+  await host.getByRole('button', { name: 'Continue', exact: true }).click();
+  await until(async () => (await state()).history?.length === 1);
+  assert.deepEqual(Object.fromEntries(Object.entries((await state()).players).map(([id, player]) => [id, player.points])), { host: 6, guest: 2, spectator: 2 });
+  console.log('PASS lane duel: actor-only picks, winner, spectator prediction and leader bounty');
+
+  await seed('Code Commun', {}, 'duel');
+  await text(host, 'Your captain: host');
+  await text(spectator, 'Share your clues with your captain');
+  assert.equal(await spectator.getByLabel('The team’s code').count(), 0);
+  await hidden(host, 'The digit in position 2');
+  await text(spectator, 'The digit in position 2');
+  await host.getByLabel('The team’s code').fill('1234');
+  await host.getByRole('button', { name: 'Try the code' }).click();
+  await text(spectator, '1234');
+  await hidden(guest, '1234');
+  await guest.getByLabel('The team’s code').fill('1111');
+  await guest.getByRole('button', { name: 'Try the code' }).click();
+  await until(async () => (await state()).currentMinigame.teamCodeAttempts?.guest?.length === 1);
+  await hidden(host, '1111');
+  await host.reload(); await text(host, '1234');
+  await host.getByLabel('The team’s code').fill('0000');
+  await host.getByRole('button', { name: 'Try the code' }).click();
+  await phase('results');
+  assert.equal((await state()).currentMinigame.winnerId, 'host');
+  assert.deepEqual((await state()).currentMinigame.awards, { host: 4, spectator: 4 });
+  await mobile();
+  console.log('PASS code duel: team roles, private clues/attempts, captain-only submission, reload and team awards');
+
+  await seed('Mémo Flash', {}, 'duel');
+  await Promise.all(pages.map(page => page.locator('.memo-scene').waitFor()));
+  const duelSceneBox = await host.locator('.memo-scene').boundingBox();
+  const duelRankingsBox = await host.locator('.score-sheet-trigger').boundingBox();
+  assert.ok(duelSceneBox.y + duelSceneBox.height < duelRankingsBox.y, 'The full duel scene must remain visible');
+  await host.screenshot({ path: '/tmp/payopoly-memo-duel.png', fullPage: true });
+  await patch({ phaseStartedAt: Date.now() - 16000 });
+  await phase('recalling');
+  await text(spectator, 'Only the duellists answer');
+  assert.equal(await spectator.getByRole('button', { name: 'Lock in my memories' }).isDisabled(), true);
+  const duelMemo = (await state()).currentMinigame;
+  const duelCorrect = duelMemo.memoQuestionIds.map(i => memoQuestions(duelMemo.memoScene, 'en')[i].answer);
+  for (let p = 0; p < 2; p++) {
+    for (let i = 0; i < 3; i++) await pages[p].locator('.memo-question').nth(i).getByRole('button').nth(p === 1 && i > 0 ? (duelCorrect[i] + 1) % 3 : duelCorrect[i]).click();
+    await pages[p].getByRole('button', { name: 'Lock in my memories' }).click();
+  }
+  await phase('results');
+  assert.equal((await state()).currentMinigame.winnerId, 'host');
+  assert.deepEqual((await state()).currentMinigame.scores, { host: 3, guest: 1 });
+  assert.deepEqual((await state()).currentMinigame.awards, { host: 4 });
+  console.log('PASS memory duel: shared scene, actor-only answers and competitive scoring');
+
+  // The wheel lists all games, including clear reasons for unavailable ones.
+  async function showWheel(type, count = 3) {
+    await seed('Choix Unique');
+    await host.evaluate(({ type, count }) => navigator.locks.request('payopoly-test-db', () => {
+      const db = JSON.parse(localStorage.getItem('payopoly-test-db'));
+      const room = db.games.PARTY4;
+      if (count === 2) { delete room.players.spectator; delete room.presence.spectator; room.playerOrder = ['host', 'guest']; }
+      room.currentMinigame = null;
+      room.currentTurn = { id: `catalog:${type}:${count}`, playerId: 'host', phase: 'spinning', minigameType: type, startedAt: Date.now() };
+      localStorage.setItem('payopoly-test-db', JSON.stringify(db)); window.__testEmit?.();
+    }), { type, count });
+    await host.goto(`${origin}/game/PARTY4`);
+    await host.getByRole('region', { name: 'Games on this wheel' }).waitFor();
+  }
+  await showWheel('duel');
+  for (const name of ['Mission Impossible', 'Unique Choice', 'Shared Code', 'Flash Memory']) {
+    const button = host.getByRole('button', { name: `Rules: ${name}. On the wheel`, exact: true });
+    await button.click();
+    const popup = host.getByRole('dialog', { name: 'The mini-games' });
+    await popup.getByText('The idea', { exact: true }).waitFor();
+    await popup.getByText('Example round', { exact: true }).waitFor();
+    assert.ok((await popup.locator('.rule-explanation').innerText()).length > 100);
+    await popup.getByRole('button', { name: 'Close', exact: true }).first().click();
+  }
+  const duelCanvasNames = await host.locator('.wheel-canvas').getAttribute('aria-label');
+  for (const name of ['Mission Impossible', 'Unique Choice', 'Shared Code', 'Flash Memory']) assert.ok(duelCanvasNames.includes(name));
+  await host.screenshot({ path: '/tmp/payopoly-duel-wheel.png', fullPage: true });
+  await showWheel('duel', 2);
+  assert.ok(!(await host.locator('.wheel-canvas').getAttribute('aria-label')).includes('Mission Impossible'));
+  await host.getByRole('button', { name: 'Rules: Mission Impossible. Needs 3 players · 2 here', exact: true }).click();
+  await text(host, 'At least three players are required.');
+  await host.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).first().click();
+  await showWheel('all');
+  for (const name of ['Unique Choice', 'Shared Code', 'Flash Memory']) await host.getByRole('button', { name: `Rules: ${name}. On the wheel`, exact: true }).waitFor();
+  await host.goto(origin);
+  await host.getByRole('button', { name: 'Mini-games', exact: true }).click();
+  const rulebook = host.getByRole('dialog', { name: 'The mini-games' });
+  await rulebook.getByRole('button', { name: /^Duel/ }).click();
+  assert.equal(await rulebook.locator('.rule-card').count(), 8);
+  await rulebook.locator('.rule-card').filter({ has: host.locator('.rule-name', { hasText: 'Shared Code' }) }).getByRole('button').click();
+  await rulebook.locator('.rule-card.is-open').getByText('Example round', { exact: true }).waitFor();
+  await rulebook.getByRole('button', { name: 'Close', exact: true }).first().click();
+  console.log('PASS Duel/Everyone wheel catalogs, missing-player explanations, direct rules and global Duel instruction filter');
+
   await seed('Choix Unique', { contentLanguage: 'fr' });
   await Promise.all(pages.map(page => text(page, 'Choose your lane in secret')));
   await host.addInitScript(() => localStorage.setItem('payopoly_language', 'fr'));
   await host.evaluate(() => localStorage.setItem('payopoly_language', 'fr'));
   await host.reload(); await text(host, 'Choisis ta voie en secret');
   await host.screenshot({ path: '/tmp/payopoly-choix-fr.png', fullPage: true });
+  await host.getByRole('button', { name: 'Règles et aide', exact: true }).click();
+  const frenchRules = host.getByRole('dialog', { name: 'Les mini-jeux' });
+  await frenchRules.getByText('Le principe du jeu', { exact: true }).waitFor();
+  await frenchRules.getByText('Exemple de tour', { exact: true }).waitFor();
   assert.deepEqual(errors, []);
   console.log('PASS French UI, mobile layouts and no runtime errors');
 } catch (error) {

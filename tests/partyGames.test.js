@@ -177,3 +177,98 @@ test('new game payouts use fixed scoring and round completion remains idempotent
   assert.equal(next.players.c.points, 10);
   assert.equal(finishTurn(next, roundAwards(r), timestamp + 2, 'round'), undefined);
 });
+
+function duelRoom(name, extra = {}, participants = ids) {
+  const r = room(name, {}, participants);
+  r.currentMinigame = { ...r.currentMinigame, type: 'duel', ...startPartyGame(name, participants, 'en', () => 0, ['a', 'b']), ...extra };
+  return r;
+}
+
+test('every new game is registered on the duel wheel with its own bilingual explanation and example', () => {
+  for (const name of PARTY_GAMES) {
+    const key = `duel:${name}`;
+    assert.ok(availableMinigames('duel', 3).includes(name));
+    if (name !== 'Mission Impossible') assert.ok(availableMinigames('duel', 2).includes(name));
+    const rules = MINIGAME_RULES.find(rule => rule.id === key);
+    assert.equal(rules.type, 'duel');
+    for (const lang of ['fr', 'en']) assert.ok(rules.explanation[lang] && rules.steps.every(step => step[lang]));
+    assert.ok(ROUND_EXAMPLES[key].every(Boolean));
+  }
+});
+
+test('duel lane choices are restricted to the two duellists and the larger sole reward wins', () => {
+  const r = duelRoom('Choix Unique', { lanePicks: { a: 2, b: 0 }, bounty: true, bets: { c: 'a' } });
+  assert.deepEqual(r.currentMinigame.participantIds, ['a', 'b']);
+  assert.equal(writePartyEntry(r.currentMinigame, 'c', 'lanePicks', 1, timestamp), undefined);
+  Object.assign(r.currentMinigame, transition(r));
+  assert.equal(r.currentMinigame.winnerId, 'a');
+  assert.deepEqual(roundAwards(r), { a: 6, b: 2, c: 2 });
+  r.currentMinigame.phase = 'choosing';
+  r.currentMinigame.lanePicks = { a: 2, b: 2 };
+  Object.assign(r.currentMinigame, transition(r));
+  assert.equal(r.currentMinigame.winnerId, null);
+  assert.deepEqual(roundAwards(r), {});
+});
+
+test('duel memory compares correct answer counts, splits positive ties and pays nothing for zero', () => {
+  const r = duelRoom('Mémo Flash', { phase: 'recalling' });
+  const mg = r.currentMinigame;
+  const correct = mg.memoQuestionIds.map(i => memoQuestions(mg.memoScene)[i].answer);
+  const incorrect = correct.map(answer => (answer + 1) % 3);
+  assert.equal(writePartyEntry(mg, 'c', 'memoAnswers', correct, timestamp), undefined);
+  mg.memoAnswers = { a: correct, b: [correct[0], incorrect[1], incorrect[2]] };
+  Object.assign(mg, transition(r));
+  assert.deepEqual(mg.scores, { a: 3, b: 1 });
+  assert.deepEqual(roundAwards(r), { a: 4 });
+  mg.phase = 'recalling'; mg.memoAnswers.b = correct;
+  Object.assign(mg, transition(r));
+  assert.deepEqual(mg.winnerIds, ['a', 'b']);
+  assert.deepEqual(roundAwards(r), { a: 2, b: 2 });
+  mg.phase = 'recalling'; mg.memoAnswers = { a: incorrect, b: incorrect };
+  Object.assign(mg, transition(r));
+  assert.deepEqual(roundAwards(r), {});
+});
+
+test('code duel distributes a complete clue set to each team, including two-player and large rooms', () => {
+  for (const count of [2, 3, 4, 8, 15]) {
+    const participants = Array.from({ length: count }, (_, i) => String(i));
+    const data = startPartyGame('Code Commun', participants, 'en', () => 0.7, ['0', '1']);
+    assert.equal(data.codeTeams['0'], '0'); assert.equal(data.codeTeams['1'], '1');
+    assert.equal(Object.keys(data.codeTeams).length, count);
+    for (const captain of ['0', '1']) {
+      const team = participants.filter(id => data.codeTeams[id] === captain);
+      const clues = team.flatMap(id => data.codeClues[id]);
+      assert.ok(team.every(id => data.codeClues[id].length));
+      assert.equal(clues.length, data.code.length);
+      assert.equal(new Set(clues.map(c => c.position)).size, data.code.length);
+      assert.equal(clues.sort((a, b) => a.position - b.position).map(c => c.value - 2).join(''), data.code);
+    }
+  }
+});
+
+test('code duel allows only captains to submit; budgets are separate and first correct guess locks all submissions', () => {
+  const r = duelRoom('Code Commun', { bounty: true });
+  let mg = r.currentMinigame;
+  assert.equal(writePartyEntry(mg, 'c', 'codeAttempts', '0000', timestamp), undefined);
+  for (const guess of ['1234', '1111', '2222']) mg = writePartyEntry(mg, 'b', 'codeAttempts', guess, timestamp);
+  assert.equal(writePartyEntry(mg, 'b', 'codeAttempts', '0000', timestamp), undefined);
+  assert.equal(mg.teamCodeAttempts.a, undefined);
+  mg = writePartyEntry(mg, 'a', 'codeAttempts', '0000', timestamp);
+  assert.equal(writePartyEntry(mg, 'b', 'codeAttempts', '0000', timestamp), undefined);
+  r.currentMinigame = mg;
+  Object.assign(mg, transition(r));
+  assert.equal(mg.winnerId, 'a');
+  assert.deepEqual(roundAwards(r), { a: 6, c: 4 });
+});
+
+test('code duel waits for both teams to exhaust attempts, and recovers with no points on a timeout', () => {
+  const r = duelRoom('Code Commun');
+  const guesses = ['1234', '1111', '2222'];
+  r.currentMinigame.teamCodeAttempts = { a: guesses.map(code => ({ by: 'a', code })) };
+  assert.equal(transition(r), null);
+  r.currentMinigame.teamCodeAttempts.b = guesses.map(code => ({ by: 'b', code }));
+  assert.deepEqual(transition(r).awards, {});
+  assert.equal(transition(r).winnerId, null);
+  r.currentMinigame.teamCodeAttempts = {};
+  assert.deepEqual(transition(r, timestamp + 65000).awards, {});
+});

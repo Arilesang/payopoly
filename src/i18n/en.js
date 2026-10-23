@@ -93,6 +93,8 @@ export default {
     random: 'Surprise me',
     players: '{{n}}+ players',
     howItWorks: 'How it plays',
+    explanation: 'The idea',
+    example: 'Example round',
     scoring: 'Scoring',
     tip: 'Pro tip',
     tapHint: '👆 Tap a card to unfold its rules',

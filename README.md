@@ -1,6 +1,6 @@
 # PayoPoly
 
-A phone-friendly party game with 19 minigame variants, French and English interfaces, and AI-generated content with curated offline-service backups.
+A phone-friendly party game with 22 minigame variants, French and English interfaces, and AI-generated content with curated offline-service backups.
 
 ## Run locally
 
@@ -34,6 +34,10 @@ The wheel also includes four short party rounds with curated content in both lan
 - **Code Commun** (Everyone, 65 seconds): combine private clues to solve one shared code with three team attempts. Success rewards every participant.
 - **Mémo Flash** (Everyone, 40 seconds): study a randomized illustrated scene for 15 seconds, then answer three visual questions in 25 seconds. Each correct answer earns a third of the die.
 
+All four new games are also on the **Duel** wheel. Choix Unique compares the two secret lane rewards; Mémo Flash awards the die to the best positive recall score (positive ties split it). In Code Commun, the duellists captain two teams, with private clues distributed to their teammates and three attempts per team; only captains submit, and the first correct code rewards every winning teammate. All three of these Duel variants work with two players. Mission Impossible needs a third player to judge.
+
+Every wheel shows its full game list, with an explanation when a game is unavailable because of player count, the last round, or the preset. Tap any game in that list to open its rules. The instruction popup includes an explanation, numbered steps, a worked example, scoring and a tip for each new variant.
+
 These rounds persist their participants, content, submissions and phase deadlines. Late submissions are rejected, and the active controller advances expired phases after reconnecting.
 
 ## Validation
@@ -46,6 +50,6 @@ npm run build
 
 For the browser checks, start Vite (`npx vite --host 127.0.0.1 --port 5173`) and run `npm run test:browser` in another terminal. Run `npm run test:party-games` for the four new games’ three-player privacy, timeout, reload, scoring and mobile checks. The runner defaults to `/usr/bin/chromium`; set `PAYOPOLY_CHROMIUM` to your browser binary and `PAYOPOLY_TEST_URL` if Vite runs elsewhere.
 
-Browser checks intercept Firebase with a test-only adapter and intercept AI requests, so they do not create production rooms or spend API credits. They cover all 19 intros/dice/help flows, creation, room settings, invite errors, resuming a seat, trivia reloads and timeouts, fallback content, final standings, rematches, host transfer and mobile layout. Unit checks cover the shared session/scoring rules and content validation.
+Browser checks intercept Firebase with a test-only adapter and intercept AI requests, so they do not create production rooms or spend API credits. They cover all 22 intros/dice/help flows, creation, room settings, invite errors, resuming a seat, trivia reloads and timeouts, fallback content, final standings, rematches, host transfer and mobile layout. Unit checks cover the shared session/scoring rules and content validation.
 
 Before publishing, verify real multi-device behavior against the deployment's Firebase access rules, including transactions and presence writes. Those external permissions are not represented by the simulated browser database.

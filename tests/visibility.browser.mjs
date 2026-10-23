@@ -47,7 +47,7 @@ async function patch(updates) {
   }), updates);
 }
 try {
-  const variants = [['solo','Petit Bac'],['duel','Petit Bac'],['duel','Trivia'],['all','Trivia'],['all','Mimes'],['all','Pictionary'],['solo','Mot Melangés'],['all','Sondage Éclair'],['all','Mot Interdit'],['duel','Punchline'],['all','Bluff'],['all','Le Curseur'],['all','Qui a écrit ça'],['duel','Rimes Rapides'],['all','Croquis Croisés'],['all','Choix Unique'],['duel','Mission Impossible'],['all','Code Commun'],['all','Mémo Flash']];
+  const variants = [['solo','Petit Bac'],['duel','Petit Bac'],['duel','Trivia'],['all','Trivia'],['all','Mimes'],['all','Pictionary'],['solo','Mot Melangés'],['all','Sondage Éclair'],['all','Mot Interdit'],['duel','Punchline'],['all','Bluff'],['all','Le Curseur'],['all','Qui a écrit ça'],['duel','Rimes Rapides'],['all','Croquis Croisés'],['all','Choix Unique'],['duel','Mission Impossible'],['all','Code Commun'],['all','Mémo Flash'],['duel','Choix Unique'],['duel','Code Commun'],['duel','Mémo Flash']];
   for (const [type, name] of variants) {
     await seed(name, type, 'dice');
     await host.getByRole('button', { name: 'Roll the die', exact: true }).click();

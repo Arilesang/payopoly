@@ -93,6 +93,8 @@ export default {
     random: 'Au hasard',
     players: '{{n}}+ joueurs',
     howItWorks: 'Comment ça se joue',
+    explanation: 'Le principe du jeu',
+    example: 'Exemple de tour',
     scoring: 'Les points',
     tip: 'Le truc en plus',
     tapHint: '👆 Touche une carte pour déplier ses règles',
