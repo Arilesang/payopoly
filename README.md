@@ -2,6 +2,10 @@
 
 A phone-friendly party game with 22 minigame variants, French and English interfaces, and AI-generated content with curated offline-service backups.
 
+## Agent workflow
+
+Coding agents start with [AGENTS.md](AGENTS.md). The [quick skill guide](docs/agent-playbook.md) explains the local game designer, creative director, game-math expert and feature builder workflows, their Quick/Deep modes, and when to use the installed React, verification and Vercel skills.
+
 ## Run locally
 
 ```sh
@@ -22,7 +26,7 @@ For a local two-player preview without Firebase or API requests, run `npm run de
 - Quick play automatically selects Everyone games, spins and rolls; it favors simultaneous games and avoids long drawing reveal loops. Immediate minigame repeats are excluded in both presets.
 - The die still sets difficulty and the per-player points budget. Crowd-dependent bonuses are scaled by group size and each player's total is capped at the die value. The only exceptions are a duel winner's Punchline sweep (double the die) and the leader bounty. Points may have one decimal place. Exact competitive ties share the reward; zero correct trivia answers earn nothing.
 - Duels open on a face-off card showing ranks, points and the pair's head-to-head record. The opponent picker shows the same information and greys out the challenger's last opponent while others remain. A trailing challenger who picks the leader and wins earns +50% of the die (leader bounty). In Trivia the challenger offers two categories and the opponent picks one (auto-picked after 20 seconds); in Rimes Rapides the challenged player goes first.
-- In objective duels (Trivia, Rimes Rapides), spectators predict the winner before play. Picks stay hidden until kick-off. A correct pick earns half the die, or the full die if it went against the majority; ties pay no predictions. Judged duels (Petit Bac, Punchline) keep spectators as the judges, with no prediction. During any duel a bar shows both players, the stakes and the predictions, and spectators can send emoji reactions that float across every screen. Trivia spectators see each question revealed, with both picks, once both duellists have answered it.
+- In objective duels (Trivia, Rimes Rapides, Choix Unique, Mémo Flash), spectators predict the winner before play. Picks stay hidden until kick-off. A correct pick earns half the die, or the full die if it went against the majority; ties pay no predictions. Judged duels (Petit Bac, Punchline) keep spectators as the judges, with no prediction. During any duel a bar shows both players, the stakes and the predictions, and spectators can send emoji reactions that float across every screen. Trivia spectators see each question revealed, with both picks, once both duellists have answered it.
 - Trivia has a shared 60-second deadline. Voting is private until results and closes after its deadline, even with no votes. Other preparation phases have a 90-second recovery limit, results advance after 30 seconds, and the host/controller can explicitly skip a turn without awarding points.
 - Disconnected hosts are replaced after a five-second grace period by a connected player. Presence tracks browser connections separately, with heartbeats and Firebase `onDisconnect`. Games keep each participant's seat through reloads, and typing the same name on another device reclaims a disconnected seat. New players can join a running game: they are added to the end of the turn order with one turn for each remaining round.
 - Final standings and rematches retain the room and players but reset scores and session state.
