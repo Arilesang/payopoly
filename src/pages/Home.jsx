@@ -4,6 +4,7 @@ import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
 import { identityStorage } from '../lib/identityStorage';
 import MinigameRulesPopup from '../components/MinigameRulesPopup';
+import GameRulesButton from '../components/GameRulesButton';
 import ShowMarquee from '../components/ShowMarquee';
 
 export default function Home() {
@@ -37,7 +38,10 @@ export default function Home() {
     finally { setLoading(false); }
   }
   return <div className="page page-home">
-    <button className="lang-toggle" onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
+    <div className="page-tools">
+      <GameRulesButton onClick={() => setShowRules(true)} expanded={showRules} />
+      <button className="lang-toggle" onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
+    </div>
     <div className="home-content">
       <p className="show-eyebrow">{t('home.showKicker')}</p>
       <h1 className="home-title" aria-label={t('home.title')}><span>Payo</span><span>Poly</span></h1>
@@ -47,7 +51,6 @@ export default function Home() {
         <button className="btn btn-primary" onClick={() => { setView('create'); setLocalError(''); }}>{t('home.createGame')}<span aria-hidden="true">↗</span></button>
         <button className="btn btn-secondary" onClick={() => { setView('join'); setLocalError(''); }}>{t('home.joinGame')}</button>
         {resume?.gameId && identityStorage.getItem(`payopoly_${resume.gameId}`) && <button className="btn btn-success" onClick={() => navigate(`/game/${resume.gameId}`)}>{say('Reprendre la partie', 'Resume game')} · {resume.gameId}</button>}
-        <button className="btn-rules" onClick={() => setShowRules(true)}>{t('rules.button')}<span aria-hidden="true">↗</span></button>
       </div></> : <form className="card" onSubmit={submit}>
         <h2>{view === 'create' ? t('home.createGame') : t('home.joinGame')}</h2>
         {view === 'join' && <><label htmlFor="room-code">{say('Code de la partie', 'Room code')}</label>

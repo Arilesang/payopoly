@@ -5,6 +5,7 @@ import { fallbackContent } from './src/lib/content.js'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  cacheDir: mode === 'demo' ? 'node_modules/.vite-demo' : 'node_modules/.vite',
   plugins: [react(), ...(mode === 'demo' ? [{
     name: 'local-demo-content',
     configureServer(server) {
@@ -13,8 +14,8 @@ export default defineConfig(({ mode }) => ({
         req.on('data', chunk => { body += chunk; });
         req.on('end', () => {
           try {
-            const { language = 'en' } = JSON.parse(body || '{}');
-            const content = fallbackContent(req.url.split('?')[0], language);
+            const { language = 'en', ...options } = JSON.parse(body || '{}');
+            const content = fallbackContent(req.url.split('?')[0], language, Math.random, options);
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ ...content, fallback: true }));
           } catch { res.statusCode = 400; res.end('{}'); }

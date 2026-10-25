@@ -57,7 +57,7 @@ export const PREDICTION_DUELS = ['Trivia', 'Rimes Rapides', 'Choix Unique', 'Mé
 
 // Phases before a duel's outcome can be read off the screen. Predictions lock
 // once the minigame moves past these.
-export const PRE_PLAY_PHASES = ['rules', 'dice', 'category_select', 'category_pick', 'ready_check', 'seed_reveal'];
+export const PRE_PLAY_PHASES = ['rules', 'prompt_select', 'dice', 'category_select', 'category_pick', 'ready_check', 'seed_reveal'];
 
 // Extra share of the die a trailing challenger earns for beating the leader.
 export const BOUNTY_SHARE = 0.5;

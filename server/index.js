@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { fallbackContent, validContent } from '../src/lib/content.js';
+import { PROMPT_TONES, validPromptTone } from '../src/lib/promptTone.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -72,7 +73,7 @@ function endpoint(name, build, maxTokens, shape = json => json) {
       res.json(data);
     } catch (err) {
       console.warn(`${name}: using curated fallback (${err.name})`);
-      res.json({ ...fallbackContent(req.path, req.body.language), fallback: true });
+      res.json({ ...fallbackContent(req.path, req.body.language, Math.random, req.body), fallback: true });
     }
   };
 }
@@ -130,15 +131,25 @@ All uppercase. The word must be a single common noun, guessable by describing it
   256));
 
 // ── Punchline: a fill-in-the-blank setup ────────────────────────────────────
-app.post('/api/punchline', endpoint('Punchline', ({ category }) =>
+app.post('/api/punchline', endpoint('Punchline', ({ category, tone }) =>
   `Write one funny fill-in-the-blank prompt in French for a party game, themed around the category "${category}". Players compete to write the funniest completion.
 
-CONTENT RULE — this comes first. The game is played out loud with family and friends of mixed ages, including children and grandparents, and the prompt appears on everyone's phone at once. It must be clean: no sex or innuendo, no drugs, no violence, no insults aimed at real people. "Adult" versions of films, or anything you would not read aloud at a family dinner, are not acceptable. Funny like a cartoon, not funny like a late-night show.
+Humour intensity ${validPromptTone(tone) ? tone : 0}/3: ${PROMPT_TONES[validPromptTone(tone) ? tone : 0].instruction}
 
 Return ONLY valid JSON, no extra text:
 { "prompt": "Le pire titre possible pour une suite de Titanic, c'est ___" }
 
 Rules: exactly one blank, written as three underscores. Keep it under 100 characters. Make it playful and open-ended so wildly different answers are all funny.`,
+  256));
+
+// ── Sondage Éclair: a category-linked "most likely to" question ─────────────
+app.post('/api/survey', endpoint('Survey', ({ category, tone }) =>
+  `Write one funny "who is most likely to" prompt in French for a party game about the category "${category}". The answer options are the players in the room.
+
+Humour intensity ${validPromptTone(tone) ? tone : 0}/3: ${PROMPT_TONES[validPromptTone(tone) ? tone : 0].instruction}
+
+Return ONLY valid JSON: { "prompt": "oublier son propre anniversaire" }
+Return only the action after "qui est le plus susceptible de", with no leading question prefix and no final question mark. No blanks. Keep it under 140 characters, amusing, easy to read aloud and clearly related to the category.`,
   256));
 
 // ── Qui a écrit ça: a short personal prompt ─────────────────────────────────

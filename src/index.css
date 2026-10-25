@@ -688,7 +688,7 @@ p  { font-size: 15px; line-height: 1.5; }
   flex-direction: column;
   gap: 6px;
 }
-.guess-line { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
+.guess-line { display: flex; flex-shrink: 0; gap: 8px; align-items: baseline; font-size: 15px; }
 .guess-author {
   font-size: 12px; font-weight: 700; color: var(--text-muted);
   flex-shrink: 0; min-width: 62px;
@@ -699,6 +699,17 @@ p  { font-size: 15px; line-height: 1.5; }
 .guess-input-row { display: flex; gap: 8px; align-items: stretch; }
 .guess-input-row .input { flex: 1; }
 .guess-input-row .btn { width: auto; flex-shrink: 0; padding-inline: 18px; }
+
+.trivia-matrix-wrap { width: 100%; overflow-x: auto; }
+.trivia-matrix { width: 100%; border-collapse: collapse; text-align: center; }
+.trivia-matrix caption { text-align: left; font-weight: 700; margin-bottom: 12px; }
+.trivia-matrix th, .trivia-matrix td { padding: 10px; border-bottom: 1px solid var(--border); }
+.trivia-matrix th:first-child { text-align: left; overflow-wrap: anywhere; }
+.trivia-matrix thead { color: var(--text-muted); }
+.trivia-matrix td { font-size: 20px; font-weight: 700; min-width: 42px; }
+.trivia-cell-correct { color: var(--success); background: rgba(39, 174, 96, 0.12); }
+.trivia-cell-wrong { color: var(--danger); background: rgba(192, 57, 43, 0.1); }
+.trivia-cell-empty { color: var(--text-muted); }
 
 /* ── Punchline — two answers head to head ─────────────────── */
 .punchline-options { display: flex; flex-direction: column; gap: 10px; }

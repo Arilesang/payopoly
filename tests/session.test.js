@@ -75,7 +75,7 @@ test('request timeout aborts generation and produces a fallback', async () => {
 
 test('automatic and manual results use the same taboo and punchline payouts', async () => {
   const { roundAwards } = await import('../src/lib/session.js');
-  const r = room(); r.currentMinigame = { name:'Mot Interdit', pointsValue:6, diceValue:6, tPlayerId:'a', foundBy:'b' };
+  const r = room(); r.currentMinigame = { name:'Mot Interdit', pointsValue:6, diceValue:6, tPlayerId:'a', foundBy:'b', winnerId:'a' };
   assert.deepEqual(roundAwards(r), { a:6, b:6 });
   r.currentMinigame = { name:'Punchline', type:'duel', pointsValue:6, diceValue:6, tPlayerId:'a', pPlayerId:'b', winnerId:'a', votes:{ c:'a', d:'a' } };
   assert.deepEqual(roundAwards(r), { a:12 });

@@ -1,8 +1,8 @@
 // Sondage Éclair — "qui est le plus susceptible de..." prompts.
 //
-// Deliberately local rather than AI-generated: the round is two 15-second
-// timers back to back, and a network round trip in the middle would be longer
-// than either of them. The options are always the player names.
+// Local compatibility fallback for rounds started before prompt selection.
+// New rounds choose or generate their prompt before either play timer starts.
+// The options are always the player names.
 export const SURVEY_PROMPTS = [
   'manquer son avion',
   'oublier son propre anniversaire',

@@ -1,3 +1,6 @@
+import { validPrompt } from './promptSelection.js';
+import { fallbackPartyPrompt } from './promptTone.js';
+
 // Curated bilingual backups keep the party playable during API outages.
 const BANK = {
   en: {
@@ -35,7 +38,7 @@ const BANK = {
     rhymes: { seed: 'CHÂTEAU', valid: ['BATEAU', 'GÂTEAU', 'CADEAU', 'MANTEAU', 'RIDEAU', 'MARTEAU', 'PLATEAU', 'RÂTEAU', 'CHAPEAU', 'DRAPEAU', 'COUTEAU', 'POTEAU', 'PANNEAU', 'TROUPEAU', 'MOINEAU', 'CORBEAU', 'BUREAU'] },
   },
 };
-export function fallbackContent(endpoint, lang = 'fr', random = Math.random) {
+export function fallbackContent(endpoint, lang = 'fr', random = Math.random, options = {}) {
   const b = BANK[lang] ?? BANK.fr;
   const pick = arr => arr[Math.floor(random() * arr.length)];
   const word = pick(b.words);
@@ -44,7 +47,8 @@ export function fallbackContent(endpoint, lang = 'fr', random = Math.random) {
     case 'mime-word': case 'pictionary-word': return { word };
     case 'jumble': return { original: word, jumbled: [...word].reverse().join('') };
     case 'taboo': return b.taboo;
-    case 'punchline': return { prompt: pick(b.punchlines) };
+    case 'punchline': return options.category ? fallbackPartyPrompt('Punchline', lang, options.category, options.tone, random) : { prompt: pick(b.punchlines) };
+    case 'survey': return fallbackPartyPrompt('Sondage Éclair', lang, options.category, options.tone, random);
     case 'prompt': return { prompt: pick(b.prompts) };
     case 'bluff': return b.bluff;
     case 'spectrum': return b.spectrum;
@@ -61,7 +65,8 @@ export function validContent(endpoint, d) {
     case 'jumble': return text(d.original) && text(d.jumbled) && d.original !== d.jumbled && [...d.original].sort().join('') === [...d.jumbled].sort().join('');
     case 'taboo': return text(d.word) && words(d.forbidden) && d.forbidden.length === 5;
     case 'bluff': return text(d.prompt) && d.prompt.includes('___') && text(d.answer);
-    case 'punchline': return text(d.prompt) && d.prompt.includes('___');
+    case 'punchline': return validPrompt('Punchline', d.prompt);
+    case 'survey': return validPrompt('Sondage Éclair', d.prompt);
     case 'prompt': return text(d.prompt);
     case 'spectrum': return text(d.left) && text(d.right) && d.left !== d.right;
     case 'rhymes': return text(d.seed) && words(d.valid) && d.valid.length >= 15;
@@ -78,6 +83,8 @@ export async function requestContent(endpoint, body, { language = 'fr', timeout 
     if (!validContent(endpoint, data)) throw new Error('Invalid content');
     return { ...data, fallback: Boolean(data.fallback) };
   } catch {
-    return { ...fallbackContent(endpoint, language), fallback: true };
+    let options = {};
+    try { options = JSON.parse(body.body ?? '{}'); } catch { /* Use the default backup for malformed options. */ }
+    return { ...fallbackContent(endpoint, language, Math.random, options), fallback: true };
   } finally { clearTimeout(timer); }
 }

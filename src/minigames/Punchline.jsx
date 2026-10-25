@@ -2,14 +2,17 @@ import { useText } from '../context/useText';
 // DUEL — Punchline
 // Both duellists get the same fill-in-the-blank. Everyone else votes on the
 // funnier answer, without being told who wrote which.
-// Phases: dice → writing → voting → complete
+// Phases: rules → prompt_select → dice → writing → voting → complete
 import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import MgHeader, { Waiting, TallyLine } from '../components/MgHeader';
+import PromptSelection from '../components/PromptSelection';
+import { promptExample } from '../lib/promptSelection';
 import { tiedLeaders, roundAwards, punchlineSweep } from '../lib/session';
 import { shuffle, votesSettled, topVote } from '../utils';
+import { now } from '../lib/clock';
 
 const WRITE_SECONDS = 45;
 const VOTE_SECONDS  = 20;
@@ -20,7 +23,7 @@ export default function Punchline() {
   const {
     game, myPlayerId, isTPlayer, isPPlayer, isSpectator,
     updateMinigame, setMyEntry, castVote, closeVoting, completeMinigame,
-   isController, fetchContent,} = useGame();
+   isController,} = useGame();
 
   const mg      = game?.currentMinigame;
   const players = game?.players ?? {};
@@ -58,12 +61,14 @@ export default function Punchline() {
     updateMinigame({
       options,
       phase: 'voting',
-      voteDeadline: Date.now() + VOTE_SECONDS * 1000,
-      countdownStartedAt: Date.now(),
+      voteDeadline: now() + VOTE_SECONDS * 1000,
+      countdownStartedAt: now(),
     });
   }
 
   if (!mg) return <div className="page page-center"><div className="spinner" /></div>;
+
+  if (mg.phase === 'prompt_select') return <PromptSelection />;
 
   // ── DICE ────────────────────────────────────────────────────────────────
   if (mg.phase === 'dice') {
@@ -72,20 +77,11 @@ export default function Punchline() {
         <MgHeader title="Punchline" subtitle={`${tName} ⚔️ ${pName}`} />
         {isTPlayer
           ? <DiceRoll onResult={val => {
-              const cats = players[mg.tPlayerId]?.categories ?? [];
-              const cat  = shuffle(cats)[0] ?? 'Général';
               updateMinigame({
-                diceValue: val, pointsValue: val, category: cat,
-                phase: 'writing', countdownStartedAt: Date.now(),
+                diceValue: val, pointsValue: val,
+                promptText: mg.promptText || promptExample(mg.name, game.settings?.language),
+                phase: 'writing', countdownStartedAt: now(),
               });
-              fetchContent('/api/punchline', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ category: cat }),
-              })
-
-                .then(data => updateMinigame({ promptText: data.prompt ?? '___' }))
-                .catch(() => updateMinigame({ promptText: `${cat} : le pire, c'est ___` }));
             }} />
           : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>

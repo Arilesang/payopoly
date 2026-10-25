@@ -1,20 +1,24 @@
 import { useText } from '../context/useText';
 // ALL (showcase → race) — Le Mot Interdit
 // The turn player describes a word out loud without saying five forbidden ones.
-// Everyone else races to type it. First correct guess ends the round — no vote.
-// Phases: dice → category_select → word_reveal → playing → complete
-import { useEffect, useState, useRef } from 'react';
+// Everyone else races to type it, then judges the speaker after the reveal.
+// Phases: dice → category_select → word_reveal → playing → voting → complete
+import { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import MgHeader, { Waiting } from '../components/MgHeader';
 import { isMatch } from '../utils';
+import VotePanel from '../components/VotePanel';
+import { motInterditResult } from '../lib/motInterdit';
+import { roundAwards } from '../lib/session';
+import { now } from '../lib/clock';
 
 const ROUND_SECONDS = 90;
 
 export default function MotInterdit() {
   const tr = useText();
-  const { game, myPlayerId, isTPlayer, updateMinigame, pushEntry, completeMinigame,  isController, fetchContent,} = useGame();
+  const { game, myPlayerId, isTPlayer, updateMinigame, pushEntry, castVote, completeMinigame, isController, fetchContent } = useGame();
 
   const mg      = game?.currentMinigame;
   const players = game?.players ?? {};
@@ -24,24 +28,34 @@ export default function MotInterdit() {
   const [selecting, setSelecting] = useState(false);
   const [draft, setDraft] = useState('');
   const feedRef = useRef(null);
+  const followFeed = useRef(true);
+  const voterIds = Object.keys(players).filter(id => id !== mg?.tPlayerId);
 
   // Guesses arrive as a push-keyed map; the feed wants them oldest-first.
   const guesses = Object.entries(mg?.guesses ?? {})
     .map(([key, g]) => ({ key, ...g }))
     .sort((a, b) => (a.at ?? 0) - (b.at ?? 0));
 
-  // ── TPlayer judges: only they hold the word, so only they can score it ───
+  // The controller stops guessing as soon as a listener finds the word.
   useEffect(() => {
     if (mg?.phase !== 'playing' || !isController || !mg.tabooWord || mg.foundBy) return;
-    const hit = guesses.find(g => isMatch(g.text, mg.tabooWord));
+    const hit = guesses.find(g => g.playerId !== mg.tPlayerId && players[g.playerId] && isMatch(g.text, mg.tabooWord));
     if (!hit) return;
-    updateMinigame({ foundBy: hit.playerId, foundAt: hit.at ?? Date.now(), phase: 'complete' });
+    updateMinigame({ foundBy: hit.playerId, foundAt: hit.at ?? now(), phase: 'voting', voteDeadline: now() + 25000 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mg?.guesses, mg?.phase, isController]);
 
   useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
-  }, [guesses.length]);
+    if (mg?.phase !== 'voting' || !isController) return;
+    if (!voterIds.every(id => ['yes', 'no'].includes(mg.votes?.[id]))) return;
+    updateMinigame(motInterditResult(mg, Object.keys(players)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mg?.votes, mg?.phase, game?.players, isController]);
+
+  useLayoutEffect(() => { followFeed.current = true; }, [mg?.id, mg?.phase]);
+  useLayoutEffect(() => {
+    if (feedRef.current && followFeed.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [guesses.length, mg?.phase]);
 
   function submitGuess() {
     const text = draft.trim();
@@ -133,7 +147,7 @@ export default function MotInterdit() {
 
               <hr style={{ margin: '16px 0', opacity: 0.15 }} />
               <p className="muted" style={{ fontSize: 13, textAlign: 'left', lineHeight: 1.6 }}>
-                📋 <strong>{tr("Règles :")}</strong> {tr("décris le mot à voix haute sans jamais prononcer le mot lui-même ni aucun des mots interdits. Les autres tapent leurs réponses. Le premier qui trouve marque autant de points que toi.")} <strong>{tr("90 secondes.")}</strong>
+                📋 <strong>{tr("Règles :")}</strong> {tr("Décris le mot sans prononcer le mot lui-même ni les mots interdits. Après une bonne réponse, les autres votent : s'ils valident la manche, toi et le premier qui trouve marquez les points du dé.")} <strong>{tr("90 secondes.")}</strong>
               </p>
             </div>
             {mg.tabooWord && (
@@ -169,13 +183,16 @@ export default function MotInterdit() {
           />
         </div>
 
-        {mg.forbiddenWords?.length > 0 && (
+        {isTPlayer && mg.forbiddenWords?.length > 0 && (
           <div className="taboo-list" style={{ justifyContent: 'center' }}>
             {mg.forbiddenWords.map(w => <span key={w} className="taboo-chip taboo-chip-live">{w}</span>)}
           </div>
         )}
 
-        <div className="guess-feed" ref={feedRef}>
+        <div className="guess-feed" ref={feedRef} onScroll={e => {
+          const feed = e.currentTarget;
+          followFeed.current = feed.scrollHeight - feed.clientHeight - feed.scrollTop <= 2;
+        }}>
           {guesses.length === 0 && (
             <p className="muted" style={{ textAlign: 'center', padding: 12 }}>
               {isTPlayer ? tr("Décris le mot — les réponses arrivent ici.") : tr("Tape ta réponse !")}
@@ -211,11 +228,32 @@ export default function MotInterdit() {
     );
   }
 
+  // Secret words are revealed to the listeners only after guessing ends.
+  if (mg.phase === 'voting') {
+    return (
+      <div className="page page-minigame">
+        <MgHeader title={tr("Vote")} subtitle={tr("{0} a trouvé !", [players[mg.foundBy]?.name])} />
+        <Countdown startedAt={mg.phaseStartedAt} total={25} />
+        <div className="card">
+          <p className="label">{tr("Le mot était")}</p>
+          <p className="mg-category">{mg.tabooWord}</p>
+          <p className="label">{tr("Mots interdits")}</p>
+          <div className="taboo-list">
+            {(mg.forbiddenWords ?? []).map(w => <span key={w} className="taboo-chip">{w}</span>)}
+          </div>
+        </div>
+        <VotePanel mode="yesno" eligibleVoterIds={voterIds} players={players} votes={mg.votes}
+          onVote={castVote} myPlayerId={myPlayerId}
+          label={tr("{0} a-t-il/elle évité tous les mots interdits ?", [tName])} />
+      </div>
+    );
+  }
+
   // ── COMPLETE ────────────────────────────────────────────────────────────
   if (mg.phase === 'complete') {
     const points     = mg.pointsValue ?? 0;
     const finderName = mg.foundBy ? players[mg.foundBy]?.name : null;
-    const awards     = mg.foundBy ? { [mg.tPlayerId]: points, [mg.foundBy]: points } : {};
+    const awards     = roundAwards(game);
 
     return (
       <div className="page page-minigame page-center">
@@ -224,11 +262,16 @@ export default function MotInterdit() {
           {finderName
             ? <>
                 <p className="result-winner">🏆 {finderName} {tr("a trouvé !")}</p>
-                <p className="muted">{finderName} +{points} pts · {tName} +{points} pts</p>
+                <p className="muted">{mg.winnerId === mg.tPlayerId
+                  ? `${finderName} +${points} pts · ${tName} +${points} pts`
+                  : tr("Manche non validée : aucun point.")}</p>
               </>
             : <p className="result-winner">{tr("😬 Personne n'a trouvé !")}</p>}
           <p className="muted" style={{ marginTop: 8 }}> {tr("Le mot était :")} <strong>{mg.tabooWord}</strong>
           </p>
+          <div className="taboo-list">
+            {(mg.forbiddenWords ?? []).map(w => <span key={w} className="taboo-chip">{w}</span>)}
+          </div>
         </div>
         {isController
           ? <button className="btn btn-large btn-primary" onClick={() => completeMinigame(awards)}> {tr("Continuer")} </button>

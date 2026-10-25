@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext';
 import { rankingRows } from '../lib/rankings';
 import Leaderboard from './Leaderboard';
 
-export default function ScoreSheet() {
+export default function ScoreSheet({ compact = false }) {
   const { game, myPlayerId, isHost } = useGame();
   const { say, t } = useLang();
   const [open, setOpen] = useState(false);
@@ -32,10 +32,10 @@ export default function ScoreSheet() {
   const hasResult = !!game.history?.length;
   const close = () => setOpen(false);
   return <>
-    <div className="score-sheet-space" aria-hidden="true" />
-    <button ref={trigger} className="score-sheet-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}>
-      <span>🏆 {say('Classement', 'Rankings')} ↑</span>
-      {mine && <span className="score-sheet-position">#{mine.rank} · {mine.points} pts</span>}
+    {!compact && <div className="score-sheet-space" aria-hidden="true" />}
+    <button ref={trigger} className={`score-sheet-trigger${compact ? ' score-sheet-trigger-compact' : ''}`} onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} aria-label={compact ? say('Classement', 'Rankings') : undefined} title={compact ? say('Classement', 'Rankings') : undefined}>
+      <span>{compact ? '🏆' : <>🏆 {say('Classement', 'Rankings')} ↑</>}</span>
+      {!compact && mine && <span className="score-sheet-position">#{mine.rank} · {mine.points} pts</span>}
     </button>
     <dialog ref={dialog} className="score-sheet" aria-labelledby="score-sheet-title" aria-describedby="score-sheet-subtitle" onCancel={close} onClose={close}
       onClick={event => { if (event.target === event.currentTarget) close(); }}>

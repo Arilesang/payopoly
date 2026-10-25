@@ -74,8 +74,13 @@ try {
   await patch({ phase: 'voting' }); await visibleAll('SECRET-DRAWING');
 
   await seed('Mot Interdit', 'all', 'playing', { category: 'Animals', tabooWord: 'SECRET-TABOO', forbiddenWords: ['BANNED-ONE', 'BANNED-TWO'] });
-  await visibleAll('BANNED-ONE');
-  for (const p of [guest, spectator]) await hidden(p, 'SECRET-TABOO');
+  await host.getByText('BANNED-ONE', { exact: true }).waitFor();
+  for (const p of [guest, spectator]) {
+    await hidden(p, 'SECRET-TABOO');
+    await hidden(p, 'BANNED-ONE');
+  }
+  await patch({ phase: 'voting', foundBy: 'guest' });
+  await visibleAll('BANNED-ONE'); await visibleAll('SECRET-TABOO');
 
   const triviaQuestions = [1,2,3].map(i => ({ q: `Public question ${i}`, options: ['Option one','Option two','Option three','Option four'], answer: 2 }));
   await seed('Trivia', 'duel', 'playing', { triviaQuestions });

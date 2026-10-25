@@ -152,6 +152,11 @@ export default function PictionaryAll() {
           onStrokeUpdate={stroke => updateCurrentStroke(stroke)}
           onClear={clearDrawing}
         />
+        {isTPlayer && (
+          <button className="btn btn-success" onClick={() => updateMinigame({ phase: 'voting', wordRevealed: true, currentStroke: null })}>
+            {tr("Terminer le dessin et passer au vote")}
+          </button>
+        )}
       </div>
     );
   }

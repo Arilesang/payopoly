@@ -103,12 +103,19 @@ export default function MinigameRouter() {
 
   const mg = game.currentMinigame;
   if (!mg || mg.id !== turn.id) return <div className="page page-center"><div className="spinner" /></div>;
+  const promptPreparation = mg.phase === 'prompt_select';
   return <>
+    {promptPreparation ? <div className="prompt-preparation-toolbar">
+      <SessionControls compact />
+      <ScoreSheet compact />
+      <button className="btn btn-ghost prompt-help" aria-label={say('Règles et aide', 'Rules and help')} title={say('Règles et aide', 'Rules and help')} onClick={() => setHelp(true)}>?</button>
+    </div> : <>
     <SessionControls />
     <ScoreSheet />
     <button className="btn btn-small btn-ghost round-help" onClick={() => setHelp(true)}>{say('Règles et aide', 'Rules and help')}</button>
-    {mg.fallback && <p className="connection-banner" role="status">{say('Contenu de secours · thème général', 'Backup content · general theme')}</p>}
-    {mg.type === 'duel' && mg.pPlayerId && mg.phase !== 'rules' && <DuelBar />}
+    </>}
+    {mg.fallback && <p className="connection-banner" role="status">{mg.promptSource === 'generated' ? say('Contenu de secours · catégorie et intensité conservées', 'Backup content · category and intensity preserved') : say('Contenu de secours · thème général', 'Backup content · general theme')}</p>}
+    {mg.type === 'duel' && mg.pPlayerId && mg.phase !== 'rules' && !promptPreparation && <DuelBar />}
     {mg.diceValue && mg.phase !== 'dice' && !(mg.type === 'duel' && mg.pPlayerId) && <p className="round-note" role="status">🎲 {mg.diceValue} {tr('points')}</p>}
     {mg.phase === 'rules' ? <RoundIntro /> : mg.phase === 'dice' && !isTPlayer ? (
       <div className="page page-minigame page-center">

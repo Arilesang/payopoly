@@ -5,9 +5,11 @@ import { shuffle } from '../utils';
 import { MINIGAMES, MINIGAME_META, PETIT_BAC_LETTERS, PREDICTION_DUELS, PRE_PLAY_PHASES, availableMinigames } from '../gameConfig';
 import { DEFAULT_SETTINGS, CATEGORIES, controllerId, onlineIds, finishTurn, scoreUnit, cleanAwards, triviaResult, tiedLeaders, roundAwards, isLeaderBounty, lastDuelOpponent, seatPlayer, generateCode, codeVariants } from '../lib/session';
 import { requestContent } from '../lib/content';
+import { motInterditResult } from '../lib/motInterdit';
 import { now, setClockOffset } from '../lib/clock';
 import { identityStorage } from '../lib/identityStorage';
 import { writePetitBacWord, validPetitBacVote, petitBacResult } from '../lib/petitBac';
+import { hasPromptSelection, beginPromptSelection, lockPromptSelection, writePromptGameEntry } from '../lib/promptSelection';
 
 import { PARTY_GAMES, partyTransition, writePartyEntry } from '../lib/partyGames';
 
@@ -389,8 +391,18 @@ export function GameProvider({ children }) {
     }
     const data = await requestRef.current.get(key);
     if (roomRef.current?.currentTurn?.id !== turnId) throw new Error('Round changed');
-    if (data.fallback) updateMinigame({ fallback: true }).catch(() => {});
+    if (data.fallback && game.currentMinigame?.phase !== 'prompt_select') updateMinigame({ fallback: true }).catch(() => {});
     return data;
+  }
+
+  async function lockPrompt(selection) {
+    const roundId = game.currentMinigame?.id;
+    const result = await runTransaction(ref(db, `games/${gameId}`), room => {
+      if (room?.currentMinigame?.id !== roundId || room.currentTurn?.id !== roundId) return undefined;
+      const next = lockPromptSelection(room, myPlayerId, selection, now());
+      return next ? { ...room, currentMinigame: next } : undefined;
+    }, { applyLocally: false });
+    return result.committed;
   }
 
   // Mark a player as ready inside a minigame
@@ -414,6 +426,17 @@ export function GameProvider({ children }) {
 
   // Cast a vote; Petit Bac duellists can vote for the opposing set.
   async function castVote(choice) {
+    if (game.currentMinigame?.name === 'Mot Interdit') {
+      const mgId = game.currentMinigame.id;
+      await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
+        if (!current || current.id !== mgId || current.phase !== 'voting' || !current.foundBy
+          || !game.players[myPlayerId] || myPlayerId === current.tPlayerId
+          || !['yes', 'no'].includes(choice) || current.votes?.[myPlayerId] !== undefined
+          || now() >= (current.voteDeadline ?? current.phaseStartedAt + 25000)) return undefined;
+        return { ...current, votes: { ...current.votes, [myPlayerId]: choice } };
+      }, { applyLocally: false });
+      return;
+    }
     if (game.currentMinigame?.name === 'Petit Bac') {
       const mgId = game.currentMinigame.id;
       await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
@@ -460,6 +483,7 @@ export function GameProvider({ children }) {
     const mgId = game.currentMinigame?.id;
     await runTransaction(ref(db, `games/${gameId}/currentMinigame`), current => {
       if (!current || current.id !== mgId || ['complete', 'results'].includes(current.phase)) return undefined;
+      if (hasPromptSelection(current) && ['submissions', 'votes', 'answers', 'predictions'].includes(field)) return writePromptGameEntry({ ...game, currentMinigame: current }, myPlayerId, field, value, now());
       if (PARTY_GAMES.includes(current.name) && !['rulesReady', 'readyPlayers'].includes(field)) return writePartyEntry(current, myPlayerId, field, value, now());
       const keys = field.split('/');
       let parent = current;
@@ -570,7 +594,22 @@ export function GameProvider({ children }) {
       return;
     }
     if (mg.phase === 'rules' && (Object.keys(mg.rulesReady ?? {}).length >= Object.keys(game.players).length || tick - mg.phaseStartedAt >= 20000)) {
+      if (hasPromptSelection(mg)) {
+        runTransaction(ref(db, `games/${gameId}`), room => {
+          if (room?.currentMinigame?.id !== mg.id || room.currentMinigame.phase !== 'rules') return undefined;
+          return { ...room, currentMinigame: { ...room.currentMinigame, ...beginPromptSelection(room, now()) } };
+        }, { applyLocally: false }).catch(() => setError('connectionError'));
+        return;
+      }
       updateMinigame({ phase: 'dice', ...(game.settings?.preset === 'quick' ? { readyPlayers: mg.rulesReady ?? {} } : {}) }).catch(() => setError('connectionError'));
+      return;
+    }
+    if (hasPromptSelection(mg) && mg.phase === 'prompt_select') {
+      if (tick >= mg.promptDeadline) runTransaction(ref(db, `games/${gameId}`), room => {
+        if (room?.currentMinigame?.id !== mg.id) return undefined;
+        const next = lockPromptSelection(room, myPlayerId, null, now(), true);
+        return next ? { ...room, currentMinigame: next } : undefined;
+      }, { applyLocally: false }).catch(() => setError('connectionError'));
       return;
     }
     // If a device reloads while generating content, another controller can retry.
@@ -582,7 +621,7 @@ export function GameProvider({ children }) {
       'Rimes Rapides': ['rhymes', 'seedWord'],
     };
     const content = contentTypes[mg.name];
-    if (content && !mg[content[1]] && !['rules', 'dice', 'complete', 'results'].includes(mg.phase) && tick - mg.phaseStartedAt >= 15000) {
+    if (content && !mg[content[1]] && !['rules', 'dice', 'category_select', 'category_pick', 'complete', 'results'].includes(mg.phase) && tick - mg.phaseStartedAt >= 15000) {
       fetchContent(`/api/${content[0]}`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ category:mg.category, difficulty:mg.difficulty ?? mg.diceValue }) })
         .then(data => {
           const updates = {
@@ -616,6 +655,10 @@ export function GameProvider({ children }) {
       return;
     }
     if (mg.phase === 'voting' && tick >= (mg.voteDeadline ?? mg.phaseStartedAt + 25000)) {
+      if (mg.name === 'Mot Interdit') {
+        updateMinigame(motInterditResult(mg, Object.keys(game.players))).catch(() => setError('connectionError'));
+        return;
+      }
       if (mg.name === 'Petit Bac') {
         updateMinigame(petitBacResult(game)).catch(() => setError('connectionError'));
         return;
@@ -678,7 +721,7 @@ export function GameProvider({ children }) {
       toggleDevMode, adjustPoints,
       submitCategory, finishCategorySubmission,
       selectMinigameType, selectMinigame, selectOpponent, startWheelSpin, startDiceRoll,
-      initMinigame, updateMinigame, setMinigameReady,
+      initMinigame, updateMinigame, setMinigameReady, lockPrompt,
       submitTriviaAnswer, castVote, placeBet, sendReaction, completeMinigame, savePetitBacWord,
       setMyEntry, pushEntry, closeVoting,
       pushDrawingStroke, updateCurrentStroke, clearDrawing,

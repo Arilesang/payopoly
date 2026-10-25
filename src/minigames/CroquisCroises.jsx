@@ -69,11 +69,11 @@ export default function CroquisCroises() {
   }
 
   function openPicking() {
-    const truth  = mg.drawWords?.[artistId] ?? '?';
+    const truth  = (mg.drawWords?.[artistId] ?? '?').toUpperCase();
     const byText = new Map();
 
     Object.entries(titles).forEach(([playerId, raw]) => {
-      const text = (raw ?? '').trim();
+      const text = (raw ?? '').trim().toUpperCase();
       if (!text) return;
       const key = normalize(text);
       // A fake that lands on the real word would put the truth in twice.
@@ -120,7 +120,7 @@ export default function CroquisCroises() {
 
     const log = [...(mg.roundLog ?? []), {
       artistId,
-      word: mg.drawWords?.[artistId] ?? '?',
+      word: (mg.drawWords?.[artistId] ?? '?').toUpperCase(),
       foundTruth,
       voters: Object.keys(picks).length,
     }];
@@ -180,7 +180,7 @@ export default function CroquisCroises() {
 
   // ── DRAWING — everyone at once, on their own canvas ─────────────────────
   if (mg.phase === 'drawing') {
-    const myWord = mg.drawWords?.[myPlayerId] ?? '...';
+    const myWord = (mg.drawWords?.[myPlayerId] ?? '...').toUpperCase();
     const mine   = mg.drawings?.[myPlayerId] ?? {};
 
     return (
@@ -228,7 +228,7 @@ export default function CroquisCroises() {
         <DrawingCanvas isDrawer={false} strokes={art.strokes ?? {}} currentStroke={null} />
 
         {amArtist ? (
-          <Waiting text={tr("Les autres inventent un faux titre. Ton mot : {0}", [mg.drawWords?.[artistId]])} />
+          <Waiting text={tr("Les autres inventent un faux titre. Ton mot : {0}", [mg.drawWords?.[artistId]?.toUpperCase()])} />
         ) : mine ? (
           <Waiting text={tr("Titre envoyé. En attente des autres...")} />
         ) : (
@@ -273,7 +273,7 @@ export default function CroquisCroises() {
                 onClick={() => !amArtist && !myPick && !isMine && setMyEntry(`picks/${round}`, opt.id)}
                 disabled={amArtist || !!myPick || isMine}
               >
-                {opt.text}{isMine ? tr(" — ton titre") : ''}
+                {opt.text.toUpperCase()}{isMine ? tr(" — ton titre") : ''}
               </button>
             );
           })}
@@ -299,7 +299,7 @@ export default function CroquisCroises() {
           {log.map((r, i) => (
             <div key={i} className="bluff-row">
               <div className="bluff-row-head">
-                <strong>{r.word}</strong>
+                <strong>{r.word.toUpperCase()}</strong>
                 <span className="bluff-badge">{players[r.artistId]?.name}</span>
               </div>
               <p className="muted" style={{ fontSize: 13 }}>

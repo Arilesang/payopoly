@@ -9,6 +9,7 @@ import Countdown from '../components/Countdown';
 import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
+import TriviaAnswerMatrix from '../components/TriviaAnswerMatrix';
 
 export default function TriviaDuel() {
   const tr = useText();
@@ -257,6 +258,7 @@ export default function TriviaDuel() {
           <span>{pName} : {mg.pScore ?? 0}/3</span>
         </div>
         <div className="card">{(mg.triviaQuestions ?? []).map((q, i) => <p key={i}><strong>{q.q}</strong><br />{q.options[q.answer]}</p>)}</div>
+        <TriviaAnswerMatrix minigame={mg} players={players} playerIds={participantIds} />
         {isController && (
           <button className="btn btn-large btn-primary" onClick={() => completeMinigame(mg.winnerId)}> {tr("Continuer")} </button>
         )}

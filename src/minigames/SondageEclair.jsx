@@ -2,13 +2,15 @@ import { useText } from '../context/useText';
 // ALL (mêlée) — Sondage Éclair
 // Everyone answers "qui est le plus susceptible de...", then everyone predicts
 // what the room answered. Points for being in the majority, and for reading it.
-// Phases: dice → answering → predicting → results
+// Phases: rules → prompt_select → dice → answering → predicting → results
 import { useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import Countdown from '../components/Countdown';
 import MgHeader, { Waiting, TallyLine } from '../components/MgHeader';
+import PromptSelection from '../components/PromptSelection';
 import { randomSurveyPrompt } from '../data/surveyPrompts';
+import { now } from '../lib/clock';
 
 const ANSWER_SECONDS  = 15;
 const PREDICT_SECONDS = 15;
@@ -42,7 +44,7 @@ export default function SondageEclair() {
   useEffect(() => {
     if (mg?.phase !== 'answering' || !isController) return;
     if (Object.keys(answers).length < playerIds.length) return;
-    updateMinigame({ phase: 'predicting', countdownStartedAt: Date.now() });
+    updateMinigame({ phase: 'predicting', countdownStartedAt: now() });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mg?.answers, mg?.phase, isController]);
 
@@ -73,6 +75,8 @@ export default function SondageEclair() {
 
   if (!mg) return <div className="page page-center"><div className="spinner" /></div>;
 
+  if (mg.phase === 'prompt_select') return <PromptSelection />;
+
   // ── DICE ────────────────────────────────────────────────────────────────
   if (mg.phase === 'dice') {
     return (
@@ -82,9 +86,9 @@ export default function SondageEclair() {
           ? <DiceRoll onResult={val => updateMinigame({
               diceValue: val,
               pointsValue: val,
-              surveyPrompt: randomSurveyPrompt(game.settings?.language),
+              surveyPrompt: mg.surveyPrompt || randomSurveyPrompt(game.settings?.language),
               phase: 'answering',
-              countdownStartedAt: Date.now(),
+              countdownStartedAt: now(),
             })} />
           : <Waiting text={tr("En attente du lancer de dé...")} />}
       </div>
@@ -112,14 +116,14 @@ export default function SondageEclair() {
             onExpire={() => {
               if (!isController) return;
               if (isPredicting) score();
-              else updateMinigame({ phase: 'predicting', countdownStartedAt: Date.now() });
+              else updateMinigame({ phase: 'predicting', countdownStartedAt: now() });
             }}
           />
         </div>
 
         <div className="card" style={{ textAlign: 'center' }}>
           <p className="label">{isPredicting ? tr("Rappel de la question") : 'Question'}</p>
-          <p className="survey-prompt">{mg.surveyPrompt} ?</p>
+          <p className="survey-prompt">{tr('Qui est le plus susceptible de...').replace(/\.\.\.$/, '')} {mg.surveyPrompt} ?</p>
           {isPredicting && (
             <p className="muted" style={{ fontSize: 14, marginTop: 8 }}> {tr("Devine la réponse la plus choisie par le groupe.")} </p>
           )}
