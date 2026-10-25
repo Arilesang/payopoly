@@ -3,12 +3,12 @@ import { now } from '../lib/clock';
 // DUEL — Rimes Rapides
 // Two players alternate typing rhymes against a shot clock that shortens every
 // exchange. First to time out, repeat, or miss loses.
-// Phases: dice → seed_reveal → playing → complete
+// Phases: dice → category_select → seed_reveal → playing → complete
 import { useEffect, useState, useRef } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
 import MgHeader, { Waiting } from '../components/MgHeader';
-import { shuffle, normalize, matchesAny } from '../utils';
+import { normalize, matchesAny } from '../utils';
 import { roundAwards } from '../lib/session';
 
 const START_MS = 7000;
@@ -60,6 +60,7 @@ export default function RimesRapides() {
 
   const [draft, setDraft] = useState('');
   const [flash, setFlash] = useState(null);
+  const [selecting, setSelecting] = useState(false);
   const feedRef = useRef(null);
 
   const chain = Object.entries(mg?.chain ?? {})
@@ -130,29 +131,38 @@ export default function RimesRapides() {
       <div className="page page-minigame page-center">
         <MgHeader title={tr("Rimes Rapides")} subtitle={`${tName} ⚔️ ${pName}`} />
         {isTPlayer
-          ? <DiceRoll onResult={val => {
-              const cats = players[mg.tPlayerId]?.categories ?? [];
-              const cat  = shuffle(cats)[0] ?? 'Général';
-              updateMinigame({
-                diceValue: val, pointsValue: val, difficulty: val,
-                category: cat, phase: 'seed_reveal',
-              });
-              fetchContent('/api/rhymes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ category: cat, difficulty: val }),
-              })
-
-                .then(data => updateMinigame({
-                  seedWord: data.seed ?? 'CHATEAU',
-                  rhymePool: data.valid ?? [],
-                }))
-                .catch(() => updateMinigame({
-                  seedWord: 'CHATEAU',
-                  rhymePool: ['BATEAU', 'GATEAU', 'CADEAU', 'MANTEAU', 'RIDEAU', 'MARTEAU', 'PLATEAU'],
-                }));
-            }} />
+          ? <DiceRoll onResult={val => updateMinigame({
+              diceValue: val, pointsValue: val, difficulty: val, phase: 'category_select',
+            })} />
           : <Waiting text={tr("En attente du lancer de dé...")} />}
+      </div>
+    );
+  }
+
+  if (mg.phase === 'category_select') {
+    const categories = players[mg.tPlayerId]?.categories ?? [];
+    return (
+      <div className="page page-minigame">
+        <MgHeader title={tr("Rimes Rapides")} subtitle={`${tName} ⚔️ ${pName}`} />
+        {isTPlayer ? (
+          <div className="card category-select-list">
+            <p className="label">{tr("Choisis une catégorie")}</p>
+            {categories.map(cat => (
+              <button key={cat} className="btn btn-category" disabled={selecting} onClick={async () => {
+                if (selecting) return;
+                setSelecting(true);
+                try {
+                  await updateMinigame({ category: cat, phase: 'seed_reveal' });
+                  const data = await fetchContent('/api/rhymes', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: cat, difficulty: mg.difficulty }),
+                  });
+                  await updateMinigame({ seedWord: data.seed.toUpperCase(), rhymePool: data.valid });
+                } finally { setSelecting(false); }
+              }}>{cat}</button>
+            ))}
+          </div>
+        ) : <Waiting text={tr("{0} choisit une catégorie...", [tName])} />}
       </div>
     );
   }
@@ -163,6 +173,8 @@ export default function RimesRapides() {
       <div className="page page-minigame page-center">
         <MgHeader title={tr("Rimes Rapides")} subtitle={`${tName} ⚔️ ${pName}`} />
         <div className="card" style={{ textAlign: 'center' }}>
+          <p className="label">{tr("Catégorie")}</p>
+          <p className="mg-category">{mg.category}</p>
           <p className="label">{tr("Trouvez des rimes avec")}</p>
           {!mg.seedWord
             ? <div className="spinner" style={{ margin: '8px auto' }} />

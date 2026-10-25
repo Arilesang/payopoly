@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useLang } from '../context/LangContext';
 import { useGame } from '../context/GameContext';
+import MinigameRulesPopup from '../components/MinigameRulesPopup';
+import GameRulesButton from '../components/GameRulesButton';
 export default function Lobby() {
   const { gameId } = useParams();
   const { t, lang, toggleLang, say } = useLang();
@@ -11,6 +13,7 @@ export default function Lobby() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [showRules, setShowRules] = useState(false);
   useEffect(() => { if (game && game.status !== 'lobby') navigate(`/game/${gameId}`); }, [game?.status, gameId]); // eslint-disable-line react-hooks/exhaustive-deps
   const link = `${window.location.origin}/?join=${encodeURIComponent(gameId)}`;
   async function copy(value, label) {
@@ -25,8 +28,12 @@ export default function Lobby() {
   const allReady = players.length >= 2 && players.every(([id, p]) => p.ready && onlinePlayerIds.includes(id));
   const myPlayer = game.players?.[myPlayerId];
   return <div className="page page-lobby">
-    <button className="lang-toggle" onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
+    <div className="page-tools">
+      <GameRulesButton onClick={() => setShowRules(true)} expanded={showRules} />
+      <button className="lang-toggle" onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
+    </div>
     <header className="lobby-header"><h1>{t('lobby.title')}</h1><div className="room-code-block"><span className="room-code-label">{say('Code', 'Code')}</span><strong className="room-code">{gameId}</strong></div></header>
+    {showRules && <MinigameRulesPopup onClose={() => setShowRules(false)} />}
     <section className="card invite-card">
       <QRCodeSVG value={link} size={144} marginSize={3} title={say('Scanner pour rejoindre la partie', 'Scan to join the game')} />
       <div className="btn-row"><button className="btn btn-small btn-primary" onClick={() => copy(link, t('lobby.linkCopied'))}>{t('lobby.copyLink')}</button>

@@ -26,7 +26,7 @@ function buildOptions(submissions, trueAnswer) {
   const truthMatchers = [];
 
   Object.entries(submissions ?? {}).forEach(([playerId, raw]) => {
-    const text = (raw ?? '').trim();
+    const text = (raw ?? '').trim().toUpperCase();
     if (!text) return;
     const key = normalize(text);
     if (!key) return;
@@ -36,7 +36,7 @@ function buildOptions(submissions, trueAnswer) {
   });
 
   const options = shuffle([
-    { id: TRUTH_ID, text: trueAnswer, authorIds: null },
+    { id: TRUTH_ID, text: trueAnswer.toUpperCase(), authorIds: null },
     ...[...byText.values()].map((o, i) => ({ id: `fake${i}`, text: o.text, authorIds: o.authorIds })),
   ]);
 
@@ -286,7 +286,7 @@ export default function Bluff() {
                 disabled={!amPicker || !!myPick || isMine}
                 title={isMine ? tr("Ton propre bluff") : undefined}
               >
-                {opt.text}{isMine ? tr(" — ton bluff") : ''}
+                {opt.text.toUpperCase()}{isMine ? tr(" — ton bluff") : ''}
               </button>
             );
           })}
@@ -308,7 +308,7 @@ export default function Bluff() {
 
         <div className="result-banner card" style={{ textAlign: 'center' }}>
           <p className="label">{tr("La vérité était")}</p>
-          <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.trueAnswer}</p>
+          <p className="mg-category" style={{ color: 'var(--accent)' }}>{mg.trueAnswer?.toUpperCase()}</p>
         </div>
 
         <div className="card">
@@ -323,7 +323,7 @@ export default function Bluff() {
             return (
               <div key={opt.id} className="bluff-row">
                 <div className="bluff-row-head">
-                  <strong>{opt.text}</strong>
+                  <strong>{opt.text.toUpperCase()}</strong>
                   {opt.id === TRUTH_ID
                     ? <span className="bluff-badge bluff-true">{tr("VÉRITÉ")}</span>
                     : <span className="bluff-badge">{authors.join(', ')}</span>}

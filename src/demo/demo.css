@@ -24,3 +24,8 @@
   cursor: pointer;
 }
 .demo-bar .demo-switch { background: var(--gold); border-color: var(--gold); color: var(--stage); }
+.demo-prompt-navigation { max-width: 480px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 36px; background: #e6d9be; font-size: 12px; }
+.demo-prompt-navigation a { color: var(--stage); padding: 6px 8px; text-decoration: none; border-bottom: 2px solid transparent; }
+.demo-prompt-navigation a[aria-current="page"] { border-color: var(--accent); font-weight: 700; }
+.demo-prompt-navigation button { background: transparent; border: 0; color: var(--stage); font-size: 20px; min-width: 36px; min-height: 36px; cursor: pointer; }
+.demo-prompt-navigation + #root { min-height: calc(100svh - 36px); }

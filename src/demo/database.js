@@ -29,6 +29,7 @@ window.addEventListener('storage', event => { if (event.key === storageKey) emit
 
 export const getDatabase = () => ({});
 export const ref = (_, path) => ({ path });
+export const get = async reference => snapshot(at(read(), reference.path));
 export const serverTimestamp = () => Date.now();
 export function onValue(reference, callback) {
   const listener = { path: reference.path, callback };

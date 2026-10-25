@@ -7,6 +7,7 @@ import Countdown from '../components/Countdown';
 import { useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import DiceRoll from '../components/DiceRoll';
+import TriviaAnswerMatrix from '../components/TriviaAnswerMatrix';
 
 export default function TriviaAll() {
   const tr = useText();
@@ -192,6 +193,7 @@ export default function TriviaAll() {
           ))}
         </div>
         <div className="card">{(mg.triviaQuestions ?? []).map((q, i) => <p key={i}><strong>{q.q}</strong><br />{q.options[q.answer]}</p>)}</div>
+        <TriviaAnswerMatrix minigame={mg} players={players} playerIds={playerIds} />
         {isController && (
           <button className="btn btn-large btn-primary" onClick={() => completeMinigame(mg.winnerId)}> {tr("Continuer")} </button>
         )}

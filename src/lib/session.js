@@ -202,7 +202,7 @@ export function roundAwards(room) {
     return cleanAwards(room, awards);
   }
   if (mg.winnerIds?.length > 1) return cleanAwards(room, Object.fromEntries(mg.winnerIds.map(id => [id, points / mg.winnerIds.length])));
-  if (mg.name === 'Mot Interdit') return mg.foundBy ? cleanAwards(room, { [mg.tPlayerId]: points, [mg.foundBy]: points }) : {};
+  if (mg.name === 'Mot Interdit') return mg.foundBy && mg.winnerId === mg.tPlayerId ? cleanAwards(room, { [mg.tPlayerId]: points, [mg.foundBy]: points }) : {};
   const awards = {};
   if (mg.winnerId) awards[mg.winnerId] = punchlineSweep(mg) ? points * 2 : points;
   if (mg.bonusWinnerId) awards[mg.bonusWinnerId] = (awards[mg.bonusWinnerId] ?? 0) + points;

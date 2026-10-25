@@ -458,8 +458,12 @@ export const MINIGAME_RULES = [
     },
     steps: [
       {
-        fr: 'Choisis ton adversaire, puis lance le dé pour fixer les points.',
-        en: 'Pick your opponent, then roll the die to set the points.',
+        fr: 'Choisis ton adversaire ; le dé fixera les points après le verrouillage de la phrase.',
+        en: 'Pick your opponent; the die will set the points after the prompt is locked.',
+      },
+      {
+        fr: 'Un spectateur tiré au sort choisit un exemple, génère une phrase selon sa catégorie et l’intensité Safe → Risqué, ou écrit sa phrase avec un seul blanc. Il verrouille son choix, puis le dé est lancé. Après 90 secondes sans choix, l’exemple est utilisé.',
+        en: 'A random spectator chooses an example, generates a prompt using their category and Safe → Risqué intensity, or writes one with a single blank. They lock it in, then the die is rolled. After 90 seconds without a choice, the example is used.',
       },
       {
         fr: 'Les deux duellistes reçoivent la même phrase à compléter. 45 secondes pour écrire.',
@@ -499,8 +503,8 @@ export const MINIGAME_RULES = [
         en: 'Pick your opponent, then roll the die to set the points.',
       },
       {
-        fr: 'Un mot de départ est révélé aux deux duellistes.',
-        en: 'A seed word is revealed to both duellists.',
+        fr: 'Le joueur qui déclenche le duel choisit une de ses catégories. Un mot de départ lié à cette catégorie est révélé aux deux duellistes.',
+        en: 'The challenger chooses one of their categories. A seed word related to that category is revealed to both duellists.',
       },
       {
         fr: 'Chacun son tour, tapez un mot qui rime — l’adversaire défié commence. Interdit de répéter un mot déjà joué.',
@@ -579,8 +583,8 @@ export const MINIGAME_RULES = [
         en: 'Pick one of your categories; the AI hands you a word to draw, visible to you alone.',
       },
       {
-        fr: '60 secondes de dessin en direct. Interdit d’écrire des lettres ou des chiffres.',
-        en: '60 seconds of live drawing. No letters, no numbers.',
+        fr: '60 secondes de dessin en direct. Interdit d’écrire des lettres ou des chiffres. Si quelqu’un trouve, termine le dessin pour passer au vote.',
+        en: '60 seconds of live drawing. No letters, no numbers. If someone guesses, finish drawing to move straight to the vote.',
       },
       {
         fr: 'Le groupe vote : mot trouvé ou pas ? Si oui, tu désignes qui a deviné en premier.',
@@ -620,17 +624,17 @@ export const MINIGAME_RULES = [
         en: '90 seconds to describe it out loud while dodging all five.',
       },
       {
-        fr: 'Tout le monde tape ses propositions. La première bonne réponse arrête la manche net.',
-        en: 'Everyone types their guesses. The first correct one ends the round on the spot.',
+        fr: 'Les autres tapent leurs propositions. À la première bonne réponse, les mots sont révélés et les autres votent pour confirmer que tu as respecté les interdits.',
+        en: 'The others type their guesses. After the first correct answer, the words are revealed and the listeners vote to confirm you avoided the forbidden words.',
       },
     ],
     scoring: {
-      fr: 'Pas de vote : celui qui trouve et toi marquez chacun les points du dé. Personne ne trouve → zéro partout.',
-      en: 'No vote: the finder and you each score the die’s points. Nobody finds it → nobody scores.',
+      fr: 'Plus de oui que de non → celui qui trouve et toi marquez chacun les points du dé. Manche refusée, égalité ou aucun vote → zéro partout.',
+      en: 'More yes than no → the finder and you each score the die’s points. Rejection, a tie or no votes → nobody scores.',
     },
     tip: {
-      fr: 'Les mots interdits sont affichés à toute la table. Ils sauront exactement où tu n’as pas le droit d’aller.',
-      en: 'The banned words are shown to everyone — they’ll know exactly where you can’t go.',
+      fr: 'Toi seul vois le mot et les mots interdits pendant la manche. Les autres les découvrent à la fin pour juger ta description.',
+      en: 'Only you see the target and forbidden words during the round. The others discover them afterward to judge your description.',
     },
   },
 
@@ -686,6 +690,10 @@ export const MINIGAME_RULES = [
       {
         fr: 'Lance le dé pour fixer les points en jeu.',
         en: 'Roll the die to set the points at stake.',
+      },
+      {
+        fr: 'Le joueur qui a déclenché le jeu choisit un exemple, génère une question selon sa catégorie et l’intensité Safe → Risqué, ou écrit sa question « Qui est le plus susceptible de… ». Il verrouille son choix avant le dé. Après 90 secondes sans choix, l’exemple est utilisé.',
+        en: 'The player who triggered the game chooses an example, generates a question using their category and Safe → Risqué intensity, or writes a “Who is most likely to…” question. They lock it before the die roll. After 90 seconds without a choice, the example is used.',
       },
       {
         fr: 'Une question du type « qui est le plus susceptible de… » s’affiche. 15 secondes pour désigner un joueur.',

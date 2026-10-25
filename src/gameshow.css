@@ -110,11 +110,16 @@ h3, .label, .show-eyebrow, .home-showline {
 .input { background: var(--bg-card); border-color: var(--stage); font-size: 16px; min-width: 0; min-height: 50px; }
 .input-code { font-family: var(--mono); letter-spacing: 5px; font-size: 29px; }
 .lang-toggle { border-radius: 3px; color: var(--stage); border-color: var(--stage); top: 22px; right: 22px; padding: 8px 10px; min-height: 36px; font-family: var(--mono); font-size: 11px; }
+.page-tools { position: absolute; top: 22px; right: 22px; display: flex; align-items: center; gap: 8px; z-index: 10; }
+.page-tools .lang-toggle { position: static; min-width: 44px; min-height: 44px; }
+.game-rules-button { display: grid; place-items: center; width: 48px; height: 44px; padding: 6px; border: 1px solid var(--stage); border-radius: 3px; background: var(--stage); color: var(--gold); cursor: pointer; }
+.game-rules-button:hover { background: var(--accent); }
+.game-rules-button:active { transform: translateY(1px); }
 
 /* The opening screen reproduces the selected design with local artwork. */
 .page-home { align-items: stretch; justify-content: center; padding-top: 26px; }
 .home-content { margin: 0; align-items: stretch; gap: 0; padding-top: 4px; }
-.show-eyebrow { font-size: 10px; letter-spacing: 2px; padding-right: 48px; min-height: 36px; display: flex; align-items: center; }
+.show-eyebrow { font-size: 10px; letter-spacing: 2px; padding-right: 116px; min-height: 40px; display: flex; align-items: center; }
 .home-title { color: var(--stage); font-family: var(--display); font-size: clamp(80px, 22vw, 106px); letter-spacing: -1px; line-height: .86; margin: 29px 0 0; }
 .home-title span { display: block; }
 .home-showline { font-size: 10px; margin-top: 17px; letter-spacing: 2px; }
@@ -131,8 +136,6 @@ h3, .label, .show-eyebrow, .home-showline {
 .home-actions { gap: 14px; }
 .home-actions .btn-primary { justify-content: space-between; }
 .home-actions .btn-secondary { background: transparent; }
-.btn-rules { border: 0; border-top: 1px dashed var(--stage); border-radius: 0; color: var(--stage); font-family: var(--mono); font-size: 11px; margin-top: 9px; padding: 16px 0 0; justify-content: space-between; min-height: 38px; }
-.btn-rules:hover { background: transparent; color: var(--accent); }
 .home-footer { font: 10px var(--mono); letter-spacing: 1px; color: var(--text-muted); margin-top: 17px; text-transform: uppercase; }
 .home-content > .card { margin-top: 28px; border: 1px dashed var(--stage); }
 .home-content > .card h2 { font-size: 30px; }
@@ -200,6 +203,50 @@ h3, .label, .show-eyebrow, .home-showline {
 .jumbled-word { font-family: var(--display); font-size: clamp(30px, 9vw, 44px); letter-spacing: 4px; text-align: center; overflow-wrap: anywhere; }
 .prompt-text { font-family: var(--display); font-size: 27px; line-height: 1.25; overflow-wrap: anywhere; }
 .page-minigame { gap: 20px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.page.prompt-selection { min-height: 0; flex: initial; padding: 12px 14px 18px; gap: 9px; }
+.prompt-selection-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px 5px; }
+.prompt-selection-header h1 { font-size: 30px; margin: 4px 0; }
+.prompt-selection-header .label { font-size: 9px; letter-spacing: .7px; }
+.prompt-role { font-size: 12px; }
+.prompt-prep-clock { flex-shrink: 0; }
+.prompt-prep-clock .countdown-ring { width: 44px; height: 44px; }
+.prompt-selection .prompt-choice { width: 100%; min-width: 0; padding: 8px 12px; gap: 5px; overflow-wrap: anywhere; }
+.prompt-choice h2 { font-size: 18px; }
+.prompt-choice-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+.prompt-selection .prompt-copy { font-family: 'Show Body', sans-serif; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.prompt-choice-heading .prompt-pick { margin-block: -6px; }
+.prompt-selection .prompt-pick, .prompt-selection .prompt-icon-button { min-height: 44px; height: 44px; width: 44px; flex-shrink: 0; padding: 0; font-size: 22px; border-radius: 50%; }
+.prompt-selection .prompt-pick { border: 0; box-shadow: none; }
+.prompt-selection .prompt-pick[aria-pressed="true"] { color: var(--accent); background: #e9ae5833; }
+.prompt-choice-selected { border-color: var(--accent); box-shadow: inset 4px 0 var(--accent); }
+.prompt-selection .input { font-size: 16px; padding: 9px 10px; }
+.prompt-choice textarea { resize: vertical; width: 100%; min-height: 62px; line-height: 1.35; }
+.prompt-generate-row { display: flex; align-items: center; gap: 8px; }
+.prompt-generate-row select { width: 100%; min-height: 44px; text-overflow: ellipsis; }
+.prompt-tone-icons { display: flex; justify-content: space-between; gap: 8px; margin-bottom: -11px; }
+.prompt-tone-icons button { background: transparent; border: 1px solid transparent; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; font-size: 22px; }
+.prompt-tone-icons button[aria-pressed="true"] { background: #e9ae5833; border-color: var(--gold); }
+.prompt-choice input[type="range"] { width: calc(100% - 44px); align-self: center; min-height: 30px; accent-color: var(--accent); }
+.prompt-tone-description { font-size: 11px; min-height: 15px; line-height: 1.3; }
+.prompt-generated-result { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+.prompt-backup { font-size: 10px; margin-top: 3px; }
+.prompt-question-prefix { font-size: 12px; }
+.prompt-manual-tools { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.prompt-selection .prompt-blank-button { width: auto; flex-shrink: 0; min-height: 36px; padding: 3px 10px; font: 18px var(--mono); }
+.prompt-char-count { margin-left: auto; white-space: nowrap; }
+.prompt-validation { font-size: 11px; color: var(--danger); }
+.prompt-lock { display: flex; align-items: center; gap: 10px; padding: 7px 0 0; }
+.prompt-lock-preview { min-width: 0; flex: 1; }
+.prompt-lock-preview .label { font-size: 9px; letter-spacing: .5px; }
+.prompt-lock-preview .prompt-copy { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 3px; }
+.prompt-lock .btn { width: auto; min-height: 44px; font-size: 19px; padding: 8px 12px; flex-shrink: 0; }
+.prompt-preparation-toolbar { display: flex; align-items: center; padding: 0 10px; gap: 4px; min-height: 44px; background: var(--stage); color: var(--on-dark); }
+.prompt-preparation-toolbar .session-controls { padding: 0 4px; border: 0; flex: 1; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; gap: 12px; }
+.prompt-preparation-toolbar .session-controls > span { white-space: nowrap; }
+.prompt-preparation-toolbar .session-controls .btn { min-width: 44px; min-height: 44px; padding: 4px; border: 0; font-size: 18px; }
+.prompt-preparation-toolbar .score-sheet-trigger-compact { position: static; transform: none; width: 44px; flex: 0 0 44px; min-height: 44px; padding: 4px; border: 0; background: transparent; box-shadow: none; justify-content: center; font-size: 20px; }
+.prompt-preparation-toolbar .prompt-help { color: var(--on-dark); width: 44px; flex: 0 0 44px; min-height: 44px; padding: 4px; border: 0; font: 20px var(--display); }
 .trivia-question { background: var(--stage); border: 0; color: var(--on-dark); padding: 24px 20px; }
 .trivia-q-text { font-family: var(--display); font-size: 30px; line-height: 1.2; text-align: left; font-weight: 700; overflow-wrap: anywhere; }
 .trivia-question > .label { color: var(--gold); }

@@ -13,8 +13,10 @@
     "test": "node --test tests/*.test.js",
     "test:browser": "node tests/browser.mjs",
     "test:visibility": "node tests/visibility.browser.mjs",
+    "test:game-fixes": "node tests/game-fixes.browser.mjs",
     "test:petit-bac": "node tests/petit-bac.browser.mjs",
-    "test:party-games": "node tests/party-games.browser.mjs"
+    "test:party-games": "node tests/party-games.browser.mjs",
+    "test:prompt-selection": "node --test tests/promptSelection.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

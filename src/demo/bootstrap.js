@@ -1,5 +1,6 @@
 import { onValue, ref, update, readDemoRoom, seedDemoRoom } from './database.js';
 import './demo.css';
+import { bootPromptPreview } from './promptPreview.js';
 
 const roomCode = 'DEMO24';
 const hostId = 'demo-you';
@@ -21,6 +22,8 @@ function roomPath(room) {
 }
 
 export function bootDemo() {
+  const preview = new URLSearchParams(location.search).get('preview');
+  if (['punchline', 'sondage'].includes(preview)) { bootPromptPreview(preview); return; }
   if (!readDemoRoom()) seedDemoRoom(freshRoom());
   const params = new URLSearchParams(location.search);
   const chosen = params.get('player');
